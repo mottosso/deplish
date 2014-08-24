@@ -29,7 +29,6 @@ import data_packet
 import file_dialog
 import output_recipe
 import undo_commands
-import communications
 import property_widget
 import variable_widget
 import graphics_widgets
@@ -157,10 +156,6 @@ class MainWindow(QtGui.QMainWindow):
 			if firstRecipeAction:
 				recipeAction.setChecked(True)
 				firstRecipeAction = False
-
-		# External communications
-		self.comms = communications.BidirectionalCommunicationObject(6001)    # TODO: Configuration file.
-		self.comms.stringReceived.connect(self.communicationReceived)
 
 		# Load the starting filename or create a new DAG
 		self.workingFilename = startFile
@@ -313,8 +308,6 @@ class MainWindow(QtGui.QMainWindow):
 		newDagNode.setName(nodeName)
 		self.dag.addNode(newDagNode)
 		self.graphicsScene.addExistingDagNode(newDagNode, nodeLocation)
-		if newDagNode.typeStr() == "Maya":
-			newDagNode.comms = self.comms
 
 		currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
 		self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
