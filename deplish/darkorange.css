@@ -1,9 +1,3 @@
-/*
-This stylesheet was downloaded from the tech-artists.org user forum.
-It was created by Yasin Uludag (user name: LoneWolf) and released to be used
-by others. Slight modifications have been made by the Depends development team.
-*/
-
 QToolTip
 {
      border: 1px solid black;
@@ -23,14 +17,6 @@ QWidget
     color: #b1b1b1;
     background-color: #323232;
 }
-
-/* ---- This seemed unnecessarily in-your-face ----
-QWidget:item:hover
-{
-    background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #ffa02f, stop: 1 #ca0619);
-    color: #000000;
-}
-*/
 
 QWidget:item:selected
 {

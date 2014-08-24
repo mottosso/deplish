@@ -53,7 +53,7 @@ if __name__ == "__main__":
 	parser.add_option('--workflow', action='store', type='string', dest='workflow', help='A file to load upon startup')
 	parser.add_option('--nogui', action='store_true', dest='nogui', help='Do not open the Depends gui for this session', default=False)
 	parser.add_option('--node', action='store', dest='node', help='Node to execute (only works in conjunction with -nogui)')
-	parser.add_option('--style', action='store', dest='stylesheet', help='Load a CSS stylesheet for this session', default='./darkorange.stylesheet')
+	parser.add_option('--style', action='store', dest='stylesheet', help='Load a CSS stylesheet for this session', default='./darkorange.css')
 	parser.add_option('--vsub', action='extend', dest='vsub', help='Specify variables and values (VAR=VALUE) to insert into the workflow')
 	parser.add_option('--evalpath', action='store', dest='evalpath', help='Specify the destination filename or path for the execution script')
 	parser.add_option('--recipe', action='store', dest='recipe', help='Specify the execution recipe by name')
