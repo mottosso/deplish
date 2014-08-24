@@ -905,7 +905,7 @@ class MainWindow(QtGui.QMainWindow):
 				raise RuntimeError("Node '%s' is present in multiple groups." % (dagNode.name))
 
 
-	def dagExecuteNode(self, dagNode, destFileOrDir, executeImmediately=False):
+	def dagExecuteNode(self, dagNode):
 		"""
 		Generate an execution script using a output recipe for the given node.
 		Takes a path for where to write the execution script, and offers the 
@@ -926,42 +926,19 @@ class MainWindow(QtGui.QMainWindow):
 			dataPacketDict = dict(self.dag.nodeOrderedDataPackets(dagNode))
 			
 			# Pre-execution hook
-			preCommandList = dagNode.preProcess(dataPacketDict)
+			preCommandList = dagNode.preProcess()
 			if preCommandList:
 				executionList.append((dagNode.name + " [Pre-execution]", preCommandList))
 			
 			# Command execution
 			splitOperationFlag = True if self.dag.nodeGroupCount(dagNode) else False
-			commandList = dagNode.executeList(dataPacketDict, splitOperations=splitOperationFlag)
+			commandList = dagNode.execute()
 			executionList.append((dagNode.name, commandList))
 			
 			# Post-execution hook
-			postCommandList = dagNode.postProcess(dataPacketDict)
+			postCommandList = dagNode.postProcess()
 			if postCommandList:
 				executionList.append((dagNode.name + " [Post-execution]", postCommandList))
-		
-		# Interleave all groups of commands and jam them back into the executionList for execution recipe handling
-		for group in self.dag.nodeGroupDict.values():
-			starti, endi = self.dag.groupIndicesInExecutionList(group, orderedDependencies)
-			if endi is None:
-				# This means the entire range isn't in the execution list & we need to stick the list of 
-				# execution lists into a format the output recipe can handle
-				endi = starti
-			if starti is None and endi is None:
-				# This means the group isn't present in the execution list at all.
-				continue
-			onlyListCommandsInRange = [x[1] for x in executionList[starti:endi+1]]
-			zippedExecutionLists = itertools.izip(*onlyListCommandsInRange)
-			fullyInterleavedCommandList = list()
-			for x in zippedExecutionLists:
-				fullyInterleavedCommandList += x
-			for i in range(len(fullyInterleavedCommandList)):
-				fullyInterleavedCommandList[i] = (self.dag.nodeGroupName(group), fullyInterleavedCommandList[i])
-			for d in range(endi, starti-1, -1):
-				del executionList[d]
-			executionList[starti:starti] = fullyInterleavedCommandList
-		
-		self.activeOutputRecipe().generate(executionList, destFileOrDir, executeImmediately)
 		
 
 	###########################################################################
@@ -1124,7 +1101,7 @@ class MainWindow(QtGui.QMainWindow):
 		if len(selectedDagNodes) > 1 or not selectedDagNodes:
 			# TODO: Status bar
 			return
-		self.dagExecuteNode(selectedDagNodes[0], '/tmp', executeImmediately)
+		self.dagExecuteNode(selectedDagNodes[0])
 
 
 	def deleteSelectedNodes(self):

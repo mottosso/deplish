@@ -608,7 +608,7 @@ class DagNode(object):
 		return list()
 	
 	
-	def executeList(self, dataPacketDict, splitOperations=False):
+	def execute(self):
 		"""
 		Given a dict of input dataPackets, return a list of commandline arguments
 		that are easily digested by an execution recipe.
@@ -624,7 +624,7 @@ class DagNode(object):
 	###########################################################################
 	## Children may inherit these
 	###########################################################################
-	def preProcess(self, dataPacketDict):
+	def preProcess(self):
 		"""
 		This runs *before* the executeList function is executed.
 		Given a dict of input dataPackets (often times not used), create a list
@@ -633,7 +633,7 @@ class DagNode(object):
 		return list()
 
 
-	def postProcess(self, dataPacketDict):
+	def postProcess(self):
 		"""
 		This runs *after* the executeList function is executed.
 		Given a dict of input dataPackets (often times not used), create a list
@@ -651,7 +651,7 @@ class DagNode(object):
 		valid alarm.
 		"""
 		return True
-	
+
 	
 	def isEmbarrassinglyParallel(self):
 		"""
@@ -743,10 +743,10 @@ class DagNodeMaya(DagNode):
 	"""
 	A node that handles communication with the external program, Maya.
 	"""
-	
+
 	# TODO : Currently this node is extremely rough.  The theory is sound, though,
 	#        and it can be fleshed out as time goes on.
-	
+
 	def __init__(self, name=""):
 		DagNode.__init__(self, name)
 		# Special members
@@ -758,12 +758,12 @@ class DagNodeMaya(DagNode):
 		"""
 		doc = ("This node can take any data packet as input and display it in the Maya user interface.")
 		return [DagNodeInput('Any', depends_data_packet.DataPacket, True, docString=doc)]
-	
-		
+
+
 	def _defineOutputs(self):
 		"""
 		"""
-		return [] 
+		return []
 
 
 	def _defineAttributes(self):
@@ -780,24 +780,24 @@ class DagNodeMaya(DagNode):
 		"""
 		if self.comms is None:
 			raise RuntimeError("Communication port not present")
-		
+
 		# Test for an external maya server.
 		self.comms.setBroadcastPort(int(self.attributeValue('talkPort')))
 		self.comms.sendString('Test message')
 		print "Node reports message sent successfully."
-		
+
 		# Push the requested data over to maya.
 		for dp in dataPackets:
 			dataPacket = dp[1]
 			dataPacketType = dataPacket.typeStr()
 			if dataPacketType == "Lightfield":
 				print "Sending message to Maya to load lightfield."
-				message = "LOAD <--> %s %s <--> %s %s" % (dataPacket.fileDescriptors['filename'].value, dataPacket.fileDescriptors['transform'].value, 
+				message = "LOAD <--> %s %s <--> %s %s" % (dataPacket.fileDescriptors['filename'].value, dataPacket.fileDescriptors['transform'].value,
 														  dataPacket.sourceNode.uuid, dataPacket.sourceNode.name)
 				print message
 			elif dataPacketType == "Pointcloud":
 				print "Sending message to Maya to load pointcloud."
-				message = "LOAD <--> %s %s <--> %s %s" % (dataPacket.fileDescriptors['filename'].value, dataPacket.fileDescriptors['transform'].value, 
+				message = "LOAD <--> %s %s <--> %s %s" % (dataPacket.fileDescriptors['filename'].value, dataPacket.fileDescriptors['transform'].value,
 														  dataPacket.sourceNode.uuid, dataPacket.sourceNode.name)
 				print message
 			else:
@@ -806,7 +806,7 @@ class DagNodeMaya(DagNode):
 			self.comms.sendString(message)
 
 		# Wait patiently.
-		
+
 
 ###############################################################################
 ###############################################################################
@@ -821,9 +821,9 @@ class DagNodeDot(DagNode):
 
 	def _defineInputs(self):
 		return []
-		
+
 	def _defineOutputs(self):
-		return [] 
+		return []
 
 	def _defineAttributes(self):
 		return []
@@ -845,9 +845,9 @@ class DagNodeCoalesce(DagNode):
 
 	def _defineInputs(self):
 		return []
-		
+
 	def _defineOutputs(self):
-		return [] 
+		return []
 
 	def _defineAttributes(self):
 		return []
