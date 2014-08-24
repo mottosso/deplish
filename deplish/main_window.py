@@ -27,7 +27,6 @@ import util
 import variables
 import data_packet
 import file_dialog
-import output_recipe
 import undo_commands
 import property_widget
 import variable_widget
@@ -116,11 +115,9 @@ class MainWindow(QtGui.QMainWindow):
 		editMenu.addAction(QtGui.QAction("&Group Nodes", self, shortcut="Ctrl+G", triggered=self.groupSelectedNodes))
 		editMenu.addAction(QtGui.QAction("&Ungroup Nodes", self, shortcut="Ctrl+Shift+G", triggered=self.ungroupSelectedNodes))
 		executeMenu = self.menuBar().addMenu("E&xecute")
-		executeMenu.addAction(QtGui.QAction("&Write Recipe", self, shortcut= "Ctrl+E", triggered=self.executeSelected))
+		executeMenu.addAction(QtGui.QAction("&Execute Graph", self, shortcut= "Ctrl+E", triggered=self.executeSelected))
 		executeMenu.addAction(QtGui.QAction("Execute &Selected Node", self, shortcut= "Ctrl+Shift+E", triggered=lambda: self.executeSelected(executeImmediately=True)))
-		recipeMenu = executeMenu.addMenu("&Output Recipe")
 		executeMenu.addSeparator()
-		executeMenu.addAction(QtGui.QAction("W&ipe stale status", self, shortcut= "Ctrl+W", triggered=self.clearStaleStatus))
 		executeMenu.addAction(QtGui.QAction("Version &Up outputs", self, shortcut= "Ctrl+U", triggered=self.versionUpSelectedOutputFilenames))
 		executeMenu.addSeparator()
 		executeMenu.addAction(QtGui.QAction("&Reload plugins", self, shortcut= "Ctrl+0", triggered=self.reloadPlugins))
@@ -136,26 +133,12 @@ class MainWindow(QtGui.QMainWindow):
 		# Setup the variables, load the plugins, and auto-generate the read dag nodes
 		self.setupStartupVariables()
 		node.loadChildNodesFromPaths(variables.value('NODE_PATH').split(':'))
-		data_packet.loadChildDataPacketsFromPaths(variables.value('DATA_PACKET_PATH').split(':'))
-		output_recipe.loadChildRecipesFromPaths(variables.value('OUTPUT_RECIPE_PATH').split(':'))
 		file_dialog.loadChildFileDialogsFromPaths(variables.value('FILE_DIALOG_PATH').split(':'))
 		node.generateReadDagNodes()
 
 		# Generate the Create menu.  Must be done after plugins are loaded.
 		for action in self.createCreateMenuActions():
 			createMenu.addAction(action)
-
-		# Generate the Output Recipe menu.  Must be done after plugins are loaded.
-		self.recipeQActionGroup = QtGui.QActionGroup(self)
-		self.recipeQActionGroup.setExclusive(True)
-		firstRecipeAction = True
-		for recipeAction in self.createRecipeMenuItems():
-			recipeAction.setCheckable(True)
-			recipeAction.setActionGroup(self.recipeQActionGroup)
-			recipeMenu.addAction(recipeAction)
-			if firstRecipeAction:
-				recipeAction.setChecked(True)
-				firstRecipeAction = False
 
 		# Load the starting filename or create a new DAG
 		self.workingFilename = startFile
@@ -176,7 +159,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.selectionTimer.timeout.connect(self.selectionRefresh)
 
 		# Hook up some signals
-		self.graphicsViewWidget.createNode.connect(self.createNode)
+		self.graphicsViewWidget.createNode.connect(self.create_node)
 		self.graphicsScene.selectionChanged.connect(self.selectionChanged)
 		self.graphicsScene.nodesDisconnected.connect(self.nodesDisconnected)
 		self.graphicsScene.nodesConnected.connect(self.nodesConnected)
@@ -240,20 +223,6 @@ class MainWindow(QtGui.QMainWindow):
 		else:
 			variables.setx('NODE_PATH', os.environ.get('DEPENDS_NODE_PATH'), readOnly=True)
 
-		# ...And a path that points to where the DataPackets come from
-		variables.add('DATA_PACKET_PATH')
-		if not os.environ.get('DEPENDS_DATA_PACKET_PATH'):
-			variables.setx('DATA_PACKET_PATH', os.path.join(variables.value('DEPENDS_DIR'), 'data_packets'), readOnly=True)
-		else:
-			variables.setx('DATA_PACKET_PATH', os.environ.get('DEPENDS_DATA_PACKET_PATH'), readOnly=True)
-		
-		# ...And a path that points to where the Output Recipes come from
-		variables.add('OUTPUT_RECIPE_PATH')
-		if not os.environ.get('DEPENDS_OUTPUT_RECIPE_PATH'):
-			variables.setx('OUTPUT_RECIPE_PATH', os.path.join(variables.value('DEPENDS_DIR'), 'output_recipes'), readOnly=True)
-		else:
-			variables.setx('OUTPUT_RECIPE_PATH', os.environ.get('DEPENDS_OUTPUT_RECIPE_PATH'), readOnly=True)
-
 		# ...And a path that points to where the File Dialogs come from
 		variables.add('FILE_DIALOG_PATH')
 		if not os.environ.get('DEPENDS_FILE_DIALOG_PATH'):
@@ -296,7 +265,7 @@ class MainWindow(QtGui.QMainWindow):
 	###########################################################################
 	## Complex message handling
 	###########################################################################
-	def createNode(self, nodeType, nodeLocation):
+	def create_node(self, nodeType, nodeLocation):
 		"""
 		Create a new dag node with a safe name, add it to the dag, and register it with the QGraphicsScene.
 		"""
@@ -306,14 +275,14 @@ class MainWindow(QtGui.QMainWindow):
 		nodeName = node.cleanNodeName(newDagNode.typeStr())
 		nodeName = self.dag.safeNodeName(nodeName)
 		newDagNode.setName(nodeName)
-		self.dag.addNode(newDagNode)
+		self.dag.add_node(newDagNode)
 		self.graphicsScene.addExistingDagNode(newDagNode, nodeLocation)
 
 		currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
 		self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
 
 
-	def deleteNodes(self, dagNodesToDelete):
+	def delete_nodes(self, dagNodesToDelete):
 		"""
 		Delete an existing dag node and its edges, and make sure the QGraphicsScene cleans up as well.
 		"""
@@ -335,7 +304,7 @@ class MainWindow(QtGui.QMainWindow):
 		for delNode in dagNodesToDelete:
 			nodesAffected = nodesAffected + self.dagNodeDisconnected(delNode)
 			nodesAffected.remove(delNode)
-			self.dag.removeNode(delNode)
+			self.dag.remove_node(delNode)
 
 		currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
 		self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
@@ -362,17 +331,17 @@ class MainWindow(QtGui.QMainWindow):
 				inputDrawNode = self.graphicsScene.drawNode(inputDagNode)
 				for outputDagNode in outNodes:
 					outputDrawNode = self.graphicsScene.drawNode(outputDagNode)
-					self.dag.connectNodes(inputDagNode, outputDagNode)
+					self.dag.connect_nodes(inputDagNode, outputDagNode)
 					newDrawEdge = self.graphicsScene.addExistingConnection(inputDagNode, outputDagNode)
 					newDrawEdge.horizontalConnectionOffset = self.graphicsScene.drawEdge(drawNode, outputDrawNode).horizontalConnectionOffset
 					newDrawEdge.adjust()
 			
 			# Disconnect this dag node from everything
 			for inputDagNode in inNodes:
-				self.dag.disconnectNodes(inputDagNode, dagNode)
+				self.dag.disconnect_nodes(inputDagNode, dagNode)
 			for outputDagNode in outNodes:
 				nodesAffected = nodesAffected + self.dagNodeDisconnected(dagNode)
-				self.dag.disconnectNodes(dagNode, outputDagNode)
+				self.dag.disconnect_nodes(dagNode, outputDagNode)
 
 			# Remove all draw edges
 			for edge in drawNode.drawEdges():
@@ -403,7 +372,7 @@ class MainWindow(QtGui.QMainWindow):
 		for dagNode in dagNodesToDupe:
 			dupedNode = dagNode.duplicate("_Dupe")
 			newLocation = self.graphicsScene.drawNode(dagNode).pos() + QtCore.QPointF(20, 20)
-			self.dag.addNode(dupedNode)
+			self.dag.add_node(dupedNode)
 			self.graphicsScene.addExistingDagNode(dupedNode, newLocation)
 		
 		currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
@@ -415,6 +384,7 @@ class MainWindow(QtGui.QMainWindow):
 		Increment the filename version of all output filenames in a given
 		list of dag nodes.
 		"""
+        # TODO: Likely remove this function for 'Publish' as it seems somewhat irrelevant?
 		preSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
 
 		nodesAffected = list()
@@ -426,9 +396,8 @@ class MainWindow(QtGui.QMainWindow):
 					currentValue = output.value[soName]
 					updatedValue = util.nextFilenameVersion(currentValue)
 					dagNode.setOutputValue(output.name, soName, updatedValue)
-					self.dag.setNodeStale(dagNode, False)
 					nodesAffected = nodesAffected + self.dagNodeOutputChanged(dagNode, dagNode.outputNamed(output.name))
-			nodesAffected = nodesAffected + self.dagSetChildrenStale(dagNode)
+			nodesAffected = nodesAffected
 
 		currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
 		self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
@@ -445,7 +414,7 @@ class MainWindow(QtGui.QMainWindow):
 		"""
 		nodesAffected = list()
 		nodesAffected = nodesAffected + self.dagNodeDisconnected(fromDagNode)
-		self.dag.disconnectNodes(fromDagNode, toDagNode)
+		self.dag.disconnect_nodes(fromDagNode, toDagNode)
 
 		# A few refreshes
 		self.updateScenegraph(self.selectedDagNodes())
@@ -458,7 +427,7 @@ class MainWindow(QtGui.QMainWindow):
 		When the user interface connects two nodes, tell the in-flight dag
 		about it.
 		"""
-		self.dag.connectNodes(fromDagNode, toDagNode)
+		self.dag.connect_nodes(fromDagNode, toDagNode)
 		self.updateScenegraph(self.selectedDagNodes())
 
 
@@ -489,7 +458,6 @@ class MainWindow(QtGui.QMainWindow):
 				bothNames = propName.split('.')
 				if newValue != dagNode.outputValue(bothNames[0], bothNames[1]):
 					dagNode.setOutputValue(bothNames[0], bothNames[1], newValue)
-					self.dag.setNodeStale(dagNode, False)
 					nodesAffected = nodesAffected + self.dagNodeOutputChanged(dagNode, dagNode.outputNamed(bothNames[0]))
 					somethingChanged = True
 				
@@ -498,12 +466,12 @@ class MainWindow(QtGui.QMainWindow):
 					dagNode.setAttributeValue(propName, newValue)
 					nodesAffected = nodesAffected + [dagNode]
 					somethingChanged = True
-				
-		# Stales aren't changed when the value doesn't change
-		if somethingChanged:
-			# Stale refers to a node's data on-disk, if an affected node is 
-			# downstream from a modified node and it already has data, it is marked stale.
-			nodesAffected = nodesAffected + self.dagSetChildrenStale(dagNode)
+
+        # TODO: 'Publish' could set up some type of 'dirtying' the nodes down the chain. Though since it's likely
+        #       going to be a "push"-style graph this doesn't make any sense. It would always re-evaluate completely
+        #       right? Or can we allow to evaluate only the last part of the graph?
+		#if somethingChanged:
+		#   nodesAffected = nodesAffected
 		
 		# Undos aren't registered when the value doesn't actually change
 		if somethingChanged:
@@ -539,7 +507,6 @@ class MainWindow(QtGui.QMainWindow):
 		elif propertyType is node.DagNodeOutput:
 			if newRange != dagNode.outputRange(propName, variableSubstitution=False):
 				dagNode.setOutputRange(propName, newRange)
-				# Note: Changing the output range does not affect the staleness of the node
 				nodesAffected = nodesAffected + [dagNode]
 				registerUndo = True
 				
@@ -555,29 +522,6 @@ class MainWindow(QtGui.QMainWindow):
 
 		# Updates the drawNodes for each of the affected dagNodes
 		self.graphicsScene.refreshDrawNodes(nodesAffected)
-
-
-	def communicationReceived(self, message):
-		"""
-		This function acts as a switchboard for incoming messages from the
-		program's communication module.  It is very rough, but it has served
-		its purpose.  More work is needed to make it nice and general.
-		"""
-		print "Dependency graph received: %s" % message
-		tokenizedCommand = message.strip().split('<-->')
-		if tokenizedCommand[0].strip() == "MODIFY":
-			attribute = tokenizedCommand[1].strip()
-			nodeName = tokenizedCommand[2].strip()
-			filename = tokenizedCommand[3].strip()
-
-			dagNode = self.dag.node(name=nodeName)
-			# TODO: Bring back and formalize
-			#for key in nodeDOTattributes:
-			#	if not key.startswith(attribute):
-			#		continue
-			#	dagNode.setAttribute(key, list(filename))
-			#	print "SUCCESS"
-			#	break
 
 
 	def selectionRefresh(self):
@@ -751,21 +695,6 @@ class MainWindow(QtGui.QMainWindow):
 				singleDollarList += vps[0] + vss[0] + vss2[0]
 				doubleDollarList += vps[1] + vss[1] + vss2[1]
 		return (list(set(singleDollarList)), list(set(doubleDollarList)))
-
-
-	def dagSetChildrenStale(self, dagNodeChanged):
-		"""
-		Given a dag node that has changed, mark all its children that have data
-		present to be 'stale'.
-		"""
-		nodesAffected = list()
-		allAffectedNodes = self.dag.allNodesDependingOnNode(dagNodeChanged)
-		for affectedDagNode in allAffectedNodes:
-			for output in affectedDagNode.outputs():
-				if self.dag.nodeOutputDataPacket(affectedDagNode, output).dataPresent():
-					self.dag.setNodeStale(affectedDagNode, True)
-					nodesAffected.append(affectedDagNode)
-		return nodesAffected
 		
 
 	def dagNodesSanityCheck(self, dagNodes):
@@ -889,11 +818,11 @@ class MainWindow(QtGui.QMainWindow):
 
 
 	def dagExecuteNode(self, dagNode):
-		"""
-		Generate an execution script using a output recipe for the given node.
-		Takes a path for where to write the execution script, and offers the 
-		ability to evaluate the script immediately.
-		"""
+		"""Evaluate the given node in the graph"""
+        # TODO: 'Publish': this is where most changes must still occur. Since here the behaviour differs a lot from
+        #       'Depends'. We should somehow create a Context that passes on to the nodes in the graph (and keep in
+        #       account the branching that can occur in the graph!)
+
 		# Convert this ordered list into an execution recipe and give it to a plugin that knows what to do with it.
 		orderedDependencies = self.dag.orderedNodeDependenciesAt(dagNode)
 		try:
@@ -902,26 +831,28 @@ class MainWindow(QtGui.QMainWindow):
 			print err
 			print "Aborting Dag execution."
 			return
-		
-		executionList = list()
+
+		# TODO: 'Publish' - We likely don't need to store in an execution list first, but can directly traverse the
+        #       graph while executing each node as we pass it and pass on the data/outputs required.
+        #       For now I have commented out all lines corresponding with 'executionList'
+		#executionList = list()
 		for dagNode in orderedDependencies:
 			# A dictionary with key=input & data=datapacket
 			dataPacketDict = dict(self.dag.nodeOrderedDataPackets(dagNode))
 			
 			# Pre-execution hook
 			preCommandList = dagNode.preProcess()
-			if preCommandList:
-				executionList.append((dagNode.name + " [Pre-execution]", preCommandList))
-			
+			#if preCommandList:
+			#	executionList.append((dagNode.name + " [Pre-execution]", preCommandList))
+
 			# Command execution
-			splitOperationFlag = True if self.dag.nodeGroupCount(dagNode) else False
 			commandList = dagNode.execute()
-			executionList.append((dagNode.name, commandList))
+			#executionList.append((dagNode.name, commandList))
 			
 			# Post-execution hook
 			postCommandList = dagNode.postProcess()
-			if postCommandList:
-				executionList.append((dagNode.name + " [Post-execution]", postCommandList))
+			#if postCommandList:
+			#	executionList.append((dagNode.name + " [Post-execution]", postCommandList))
 		
 
 	###########################################################################
@@ -1089,12 +1020,12 @@ class MainWindow(QtGui.QMainWindow):
 
 	def deleteSelectedNodes(self):
 		"""
-		Delete selected nodes using self.deleteNodes().
+		Delete selected nodes using self.delete_nodes().
 		"""
 		dagNodesToDelete = self.selectedDagNodes()
 		if not dagNodesToDelete:
 			return
-		self.deleteNodes(dagNodesToDelete)
+		self.delete_nodes(dagNodesToDelete)
 
 
 	def shakeSelectedNodes(self):
@@ -1164,7 +1095,7 @@ class MainWindow(QtGui.QMainWindow):
 		nodeLocation = self.sender().data()[1]
 		if nodeLocation is None:
 			nodeLocation = self.graphicsViewWidget.centerCoordinates()
-		self.createNode(nodeType, nodeLocation)
+		self.create_node(nodeType, nodeLocation)
 
 
 	def createCreateMenuActions(self):
@@ -1178,47 +1109,6 @@ class MainWindow(QtGui.QMainWindow):
 			menuAction.setData((tipe, None))
 			actionList.append(menuAction)
 		return actionList
-	
-
-	def setActiveOutputRecipe(self, recipeName):
-		"""
-		Sets the output recipe to one of the valid ones, based on a given name.
-		"""
-		for action in self.recipeQActionGroup.actions():
-			if action.text() == recipeName:
-				action.setChecked(True)
-				return
-		raise RuntimeError("No output recipe named %s exists." % recipeName)
-
-
-	def activeOutputRecipe(self):
-		"""
-		Returns an output recipe object for the currently-active output recipe
-		in the menuing system.
-		"""
-		return self.recipeQActionGroup.checkedAction().data()()
-		
-
-	def createRecipeMenuItems(self):
-		"""
-		Creates the recipe menu actions from the recipe plugin directory.
-		"""
-		actionList = list()
-		for tipe in output_recipe.outputRecipeTypes():
-			menuAction = QtGui.QAction(tipe().name(), self)
-			menuAction.setData(tipe)
-			actionList.append(menuAction)
-		return actionList
-	
-	
-	def clearStaleStatus(self):
-		"""
-		Clears the stale status for all selected dag nodes.
-		"""
-		dagNodes = self.selectedDagNodes()
-		for node in dagNodes:
-			self.dag.setNodeStale(node, False)
-		self.graphicsScene.refreshDrawNodes(dagNodes)
 		
 	
 	def testMenuItem(self):

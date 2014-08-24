@@ -30,16 +30,13 @@ class DAG(object):
 
 	The primary dependency graph containing a networkx DiGraph of DagNode 
 	objects connected to eachother.  Also keeps track of which nodes are
-	considered stale, and which nodes are members of various node groups.
+	members of various node groups.
 
 	"""
 
 	def __init__(self):
 		# The dependency graph
 		self.network = networkx.DiGraph()
-		
-		# A dict of which nodes are currently in a stale state
-		self.staleNodeDict = dict()
 		
 		# A list of node group sets
 		self.nodeGroupDict = dict()
@@ -73,9 +70,7 @@ class DAG(object):
 
 
 	def connections(self):
-		"""
-		Return a list of all edges in the DAG.
-		"""
+		"""Return a list of all edges in the DAG."""
 		return self.network.edges()
 	
 
@@ -95,27 +90,21 @@ class DAG(object):
 		return [edge[0] for edge in self.network.in_edges(dagNode)]
 
 	
-	def addNode(self, dagNode, stale=False):
-		"""
-		Adds a node to the DAG.  An optional stale setting is available.
-		"""
+	def add_node(self, dagNode):
+		"""Adds a node to the DAG."""
 		if self.node(dagNode.name):
 			raise RuntimeError('Cannot add node named %s, as it already exists.' % dagNode.name)
 		self.network.add_node(dagNode)
-		self.staleNodeDict[dagNode] = stale
 
 
-	def removeNode(self, dagNode=None, name=None):
-		"""
-		Remove a node from the DAG.
-		"""
+	def remove_node(self, dagNode=None, name=None):
+		"""Remove a node from the DAG."""
 		if not dagNode:
 			dagNode = self.node(name=name)
 		self.network.remove_node(dagNode)
-		self.staleNodeDict.pop(dagNode, None)
 
 
-	def connectNodes(self, startNode, endNode):
+	def connect_nodes(self, startNode, endNode):
 		"""
 		Attempts to connect two nodes in the DAG.  Raises an exeption if
 		there is an issue.
@@ -131,7 +120,7 @@ class DAG(object):
 			raise RuntimeError('The directed graph is nolonger acyclic!')
 
 
-	def disconnectNodes(self, startNode, endNode):
+	def disconnect_nodes(self, startNode, endNode):
 		"""
 		Attempts to disconnect two nodes in the DAG.  Raises an exception if 
 		there is an issue.
@@ -141,20 +130,6 @@ class DAG(object):
 		if endNode not in self.network:
 			raise RuntimeError('Node %s does not exist in DAG.' % endNode.name)
 		self.network.remove_edge(endNode, startNode)
-
-
-	def setNodeStale(self, dagNode, newState):
-		"""
-		Set a node's stale state.
-		"""
-		self.staleNodeDict[dagNode] = newState
-		
-		
-	def nodeStaleState(self, dagNode):
-		"""
-		Retrieve a node's stale state.
-		"""
-		return self.staleNodeDict[dagNode]
 	
 
 	def buildSceneGraph(self, atNode):
@@ -474,7 +449,6 @@ class DAG(object):
 			nodes.append({"NAME":copy.deepcopy(dagNode.name),
 						  "TYPE":type(dagNode).__name__,
 						  "UUID":str(dagNode.uuid),
-						  "STALE":str(self.staleNodeDict[dagNode]),
 						  "INPUTS":[{"NAME":copy.deepcopy(x.name), "VALUE":copy.deepcopy(x.value), "RANGE":copy.deepcopy(x.seqRange)} for x in dagNode.inputs()],
 						  "OUTPUTS":[{"NAME":copy.deepcopy(x.name), "VALUE":copy.deepcopy(x.value), "RANGE":copy.deepcopy(x.seqRange)} for x in dagNode.outputs()],
 						  "ATTRIBUTES":[{"NAME":copy.deepcopy(x.name), "VALUE":copy.deepcopy(x.value), "RANGE":copy.deepcopy(x.seqRange)} for x in dagNode.attributes()] })
@@ -504,7 +478,6 @@ class DAG(object):
 		"""
 		# Clear out the existing DAG
 		self.network.clear()
-		self.staleNodeDict.clear()
 		self.nodeGroupDict.clear()
 		
 		# Loads of nodes
@@ -513,7 +486,6 @@ class DAG(object):
 			newNode = util.classTypeNamedFromModule(nodeType, 'node')
 			newNode.name = n["NAME"]
 			newNode.uuid = uuid.UUID(n['UUID'])
-			stale = (n["STALE"] == "True")
 			for i in n["INPUTS"]:
 				newNode.setInputValue(i["NAME"], i["VALUE"])
 				newNode.setInputRange(i["NAME"], i["RANGE"])
@@ -525,13 +497,13 @@ class DAG(object):
 			for a in n["ATTRIBUTES"]:
 				newNode.setAttributeValue(a["NAME"], a["VALUE"])
 				newNode.setAttributeRange(a["NAME"], a["RANGE"])
-			self.addNode(newNode, stale)
+			self.add_node(newNode)
 			
 		# Edge loads
 		for e in snapshotDict["EDGES"]:
 			fromNode = self.node(nUUID=uuid.UUID(e["FROM"]))
 			toNode = self.node(nUUID=uuid.UUID(e["TO"]))
-			self.connectNodes(fromNode, toNode)
+			self.connect_nodes(fromNode, toNode)
 		
 		# Group loads
 		for g in snapshotDict["GROUPS"]:

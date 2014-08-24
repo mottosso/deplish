@@ -206,8 +206,7 @@ class DrawNode(QtGui.QGraphicsItem):
 		"""
 		Draw the node, whether it's in the highlight list, selected or 
 		unselected, is currently executable, and its name.  Also draws a 
-		little light denoting if it already has data present and/or if it is
-		in a "stale" state.
+		little light denoting if it already has data present.
 		"""
 		inputsFulfilled = self.scene().dag.nodeAllInputsDataPresent(self.dagNode)
 		
@@ -249,9 +248,6 @@ class DrawNode(QtGui.QGraphicsItem):
 				painter.setBrush(QtGui.QBrush(QtGui.QColor(255, 0, 0)))
 				break
 
-		# The stale light overrides all
-		if self.scene().dag.nodeStaleState(self.dagNode):
-			painter.setBrush(QtGui.QBrush(QtGui.QColor(0, 59, 174)))
 		painter.drawRect(QtCore.QRectF(-self.width/2+5, -self.height/2+5, 5, 5))
 
 		# Text (none for dot nodes)
