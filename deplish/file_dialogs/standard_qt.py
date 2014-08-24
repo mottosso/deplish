@@ -6,7 +6,7 @@
 
 from PySide import QtCore, QtGui, QtOpenGL
 
-import depends_file_dialog
+import file_dialog
 
 
 """
@@ -17,11 +17,11 @@ It runs a standard QT file dialog that lets the user choose their file.
 
 ################################################################################
 ################################################################################
-class QtFileDialog(depends_file_dialog.FileDialog):
+class QtFileDialog(file_dialog.FileDialog):
 	"""
 	"""
 	def __init__(self):
-		depends_file_dialog.FileDialog.__init__(self)
+		file_dialog.FileDialog.__init__(self)
 
 
 	def name(self):

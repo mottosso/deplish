@@ -10,9 +10,9 @@ import copy
 
 import networkx
 
-import depends_node
-import depends_util
-import depends_data_packet
+import node
+import util
+import data_packet
 
 
 """
@@ -295,7 +295,7 @@ class DAG:
 		dagNode and which of its outputs is connected to the input.
 		"""
 		inputString = dagNode.inputValue(input.name)
-		(connectedNode, connectedNodeOutput) = depends_data_packet.nodeAndOutputFromScenegraphLocationString(inputString, self)
+		(connectedNode, connectedNodeOutput) = data_packet.nodeAndOutputFromScenegraphLocationString(inputString, self)
 		return (connectedNode, connectedNodeOutput)
 	
 	
@@ -509,7 +509,7 @@ class DAG:
 		# Loads of nodes
 		for n in snapshotDict["NODES"]:
 			nodeType = n["TYPE"]
-			newNode = depends_util.classTypeNamedFromModule(nodeType, 'depends_node')
+			newNode = util.classTypeNamedFromModule(nodeType, 'node')
 			newNode.name = n["NAME"]
 			newNode.uuid = uuid.UUID(n['UUID'])
 			stale = (n["STALE"] == "True")

@@ -12,19 +12,19 @@ import itertools
 
 from PySide import QtCore, QtGui
 
-import depends_dag
-import depends_node
-import depends_util
-import depends_variables
-import depends_data_packet
-import depends_file_dialog
-import depends_output_recipe
-import depends_undo_commands
-import depends_communications
-import depends_property_widget
-import depends_variable_widget
-import depends_graphics_widgets
-import depends_scenegraph_widget
+import dag
+import node
+import util
+import variables
+import data_packet
+import file_dialog
+import output_recipe
+import undo_commands
+import communications
+import property_widget
+import variable_widget
+import graphics_widgets
+import scenegraph_widget
 
 
 """
@@ -51,7 +51,7 @@ class MainWindow(QtGui.QMainWindow):
 		QtGui.QMainWindow.__init__(self, parent)
 
 		# Add the DAG widget
-		self.graphicsViewWidget = depends_graphics_widgets.GraphicsViewWidget(self)
+		self.graphicsViewWidget = graphics_widgets.GraphicsViewWidget(self)
 		self.graphicsScene = self.graphicsViewWidget.scene()
 		self.setCentralWidget(self.graphicsViewWidget)
 
@@ -63,7 +63,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.propDock)
 
 		# Create and add the properties dialog to the dock widget
-		self.propWidget = depends_property_widget.PropWidget(self)
+		self.propWidget = property_widget.PropWidget(self)
 		self.propDock.setWidget(self.propWidget)
 
 		# Create the docking widget for the sceneGraph dialog
@@ -74,7 +74,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.sceneGraphDock)
 
 		# Create and add the sceneGraph dialog to the dock widget
-		self.sceneGraphWidget = depends_scenegraph_widget.SceneGraphWidget(self)
+		self.sceneGraphWidget = scenegraph_widget.SceneGraphWidget(self)
 		self.sceneGraphDock.setWidget(self.sceneGraphWidget)
 
 		# Create the docking widget for the variable dialog
@@ -85,7 +85,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.variableDock)
 
 		# Create and add the variable dialog to the dock widget
-		self.variableWidget = depends_variable_widget.VariableWidget(self)
+		self.variableWidget = variable_widget.VariableWidget(self)
 		self.variableDock.setWidget(self.variableWidget)
 		self.variableDock.hide()
 
@@ -138,11 +138,11 @@ class MainWindow(QtGui.QMainWindow):
 
 		# Setup the variables, load the plugins, and auto-generate the read dag nodes
 		self.setupStartupVariables()
-		depends_node.loadChildNodesFromPaths(depends_variables.value('NODE_PATH').split(':'))
-		depends_data_packet.loadChildDataPacketsFromPaths(depends_variables.value('DATA_PACKET_PATH').split(':'))
-		depends_output_recipe.loadChildRecipesFromPaths(depends_variables.value('OUTPUT_RECIPE_PATH').split(':'))
-		depends_file_dialog.loadChildFileDialogsFromPaths(depends_variables.value('FILE_DIALOG_PATH').split(':'))
-		depends_node.generateReadDagNodes()
+		node.loadChildNodesFromPaths(variables.value('NODE_PATH').split(':'))
+		data_packet.loadChildDataPacketsFromPaths(variables.value('DATA_PACKET_PATH').split(':'))
+		output_recipe.loadChildRecipesFromPaths(variables.value('OUTPUT_RECIPE_PATH').split(':'))
+		file_dialog.loadChildFileDialogsFromPaths(variables.value('FILE_DIALOG_PATH').split(':'))
+		node.generateReadDagNodes()
 
 		# Generate the Create menu.  Must be done after plugins are loaded.
 		for action in self.createCreateMenuActions():
@@ -161,12 +161,12 @@ class MainWindow(QtGui.QMainWindow):
 				firstRecipeAction = False
 
 		# External communications
-		self.comms = depends_communications.BidirectionalCommunicationObject(6001)    # TODO: Configuration file.
+		self.comms = communications.BidirectionalCommunicationObject(6001)    # TODO: Configuration file.
 		self.comms.stringReceived.connect(self.communicationReceived)
 
 		# Load the starting filename or create a new DAG
 		self.workingFilename = startFile
-		self.dag = depends_dag.DAG()
+		self.dag = dag.DAG()
 		self.graphicsScene.setDag(self.dag)
 		if not self.open(self.workingFilename):
 			self.setWindowTitle("Depends")
@@ -193,9 +193,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.propWidget.mouseover.connect(self.sceneGraphWidget.highlightRowsUsingNodes)
 		self.sceneGraphWidget.mouseover.connect(self.highlightDagNodes)
 		self.sceneGraphWidget.mouseover.connect(self.propWidget.highlightInputs)
-		self.variableWidget.addVariable.connect(depends_variables.add)
-		self.variableWidget.setVariable.connect(depends_variables.setx)
-		self.variableWidget.removeVariable.connect(depends_variables.remove)
+		self.variableWidget.addVariable.connect(variables.add)
+		self.variableWidget.setVariable.connect(variables.setx)
+		self.variableWidget.removeVariable.connect(variables.remove)
 		self.undoStack.cleanChanged.connect(self.setWindowTitleClean)
 		
 
@@ -245,36 +245,36 @@ class MainWindow(QtGui.QMainWindow):
 		environment variables.
 		"""
 		# The current session gets a "binary directory" variable
-		depends_variables.add('DEPENDS_DIR')
-		depends_variables.setx('DEPENDS_DIR', os.path.dirname(os.path.realpath(__file__)), readOnly=True)
+		variables.add('DEPENDS_DIR')
+		variables.setx('DEPENDS_DIR', os.path.dirname(os.path.realpath(__file__)), readOnly=True)
 
 		# ...And a path that points to where the nodes are loaded from
-		depends_variables.add('NODE_PATH')
+		variables.add('NODE_PATH')
 		if not os.environ.get('DEPENDS_NODE_PATH'):
-			depends_variables.setx('NODE_PATH', os.path.join(depends_variables.value('DEPENDS_DIR'), 'nodes'), readOnly=True)
+			variables.setx('NODE_PATH', os.path.join(variables.value('DEPENDS_DIR'), 'nodes'), readOnly=True)
 		else:
-			depends_variables.setx('NODE_PATH', os.environ.get('DEPENDS_NODE_PATH'), readOnly=True)
+			variables.setx('NODE_PATH', os.environ.get('DEPENDS_NODE_PATH'), readOnly=True)
 
 		# ...And a path that points to where the DataPackets come from
-		depends_variables.add('DATA_PACKET_PATH')
+		variables.add('DATA_PACKET_PATH')
 		if not os.environ.get('DEPENDS_DATA_PACKET_PATH'):
-			depends_variables.setx('DATA_PACKET_PATH', os.path.join(depends_variables.value('DEPENDS_DIR'), 'data_packets'), readOnly=True)
+			variables.setx('DATA_PACKET_PATH', os.path.join(variables.value('DEPENDS_DIR'), 'data_packets'), readOnly=True)
 		else:
-			depends_variables.setx('DATA_PACKET_PATH', os.environ.get('DEPENDS_DATA_PACKET_PATH'), readOnly=True)
+			variables.setx('DATA_PACKET_PATH', os.environ.get('DEPENDS_DATA_PACKET_PATH'), readOnly=True)
 		
 		# ...And a path that points to where the Output Recipes come from
-		depends_variables.add('OUTPUT_RECIPE_PATH')
+		variables.add('OUTPUT_RECIPE_PATH')
 		if not os.environ.get('DEPENDS_OUTPUT_RECIPE_PATH'):
-			depends_variables.setx('OUTPUT_RECIPE_PATH', os.path.join(depends_variables.value('DEPENDS_DIR'), 'output_recipes'), readOnly=True)
+			variables.setx('OUTPUT_RECIPE_PATH', os.path.join(variables.value('DEPENDS_DIR'), 'output_recipes'), readOnly=True)
 		else:
-			depends_variables.setx('OUTPUT_RECIPE_PATH', os.environ.get('DEPENDS_OUTPUT_RECIPE_PATH'), readOnly=True)
+			variables.setx('OUTPUT_RECIPE_PATH', os.environ.get('DEPENDS_OUTPUT_RECIPE_PATH'), readOnly=True)
 
 		# ...And a path that points to where the File Dialogs come from
-		depends_variables.add('FILE_DIALOG_PATH')
+		variables.add('FILE_DIALOG_PATH')
 		if not os.environ.get('DEPENDS_FILE_DIALOG_PATH'):
-			depends_variables.setx('FILE_DIALOG_PATH', os.path.join(depends_variables.value('DEPENDS_DIR'), 'file_dialogs'), readOnly=True)
+			variables.setx('FILE_DIALOG_PATH', os.path.join(variables.value('DEPENDS_DIR'), 'file_dialogs'), readOnly=True)
 		else:
-			depends_variables.setx('FILE_DIALOG_PATH', os.environ.get('DEPENDS_FILE_DIALOG_PATH'), readOnly=True)
+			variables.setx('FILE_DIALOG_PATH', os.environ.get('DEPENDS_FILE_DIALOG_PATH'), readOnly=True)
 
 		
 	def clearVariableDictionary(self):
@@ -282,7 +282,7 @@ class MainWindow(QtGui.QMainWindow):
 		Clear all variables from the 'global' variable dictionary that aren't 
 		"built-in" to the current session.
 		"""
-		for key in depends_variables.names():
+		for key in variables.names():
 			if key == 'DEPENDS_DIR':
 				continue
 			if key == 'NODE_PATH':
@@ -318,7 +318,7 @@ class MainWindow(QtGui.QMainWindow):
 		preSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
 
 		newDagNode = nodeType()
-		nodeName = depends_node.cleanNodeName(newDagNode.typeStr())
+		nodeName = node.cleanNodeName(newDagNode.typeStr())
 		nodeName = self.dag.safeNodeName(nodeName)
 		newDagNode.setName(nodeName)
 		self.dag.addNode(newDagNode)
@@ -327,7 +327,7 @@ class MainWindow(QtGui.QMainWindow):
 			newDagNode.comms = self.comms
 
 		currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
-		self.undoStack.push(depends_undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
+		self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
 
 
 	def deleteNodes(self, dagNodesToDelete):
@@ -355,7 +355,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.dag.removeNode(delNode)
 
 		currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
-		self.undoStack.push(depends_undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
+		self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
 		
 		# Updates the drawNodes for each of the affected dagNodes
 		self.graphicsScene.refreshDrawNodes(nodesAffected)
@@ -402,7 +402,7 @@ class MainWindow(QtGui.QMainWindow):
 				dagNode.setInputValue(input.name, "")
 
 		currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
-		self.undoStack.push(depends_undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
+		self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
 
 		# A few refreshes
 		self.propWidget.refresh()
@@ -424,7 +424,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.graphicsScene.addExistingDagNode(dupedNode, newLocation)
 		
 		currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
-		self.undoStack.push(depends_undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
+		self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
 
 
 	def versionUpOutputFilenames(self, dagNodesToVersionUp):
@@ -441,14 +441,14 @@ class MainWindow(QtGui.QMainWindow):
 					if not output.value[soName]:
 						continue
 					currentValue = output.value[soName]
-					updatedValue = depends_util.nextFilenameVersion(currentValue)
+					updatedValue = util.nextFilenameVersion(currentValue)
 					dagNode.setOutputValue(output.name, soName, updatedValue)
 					self.dag.setNodeStale(dagNode, False)
 					nodesAffected = nodesAffected + self.dagNodeOutputChanged(dagNode, dagNode.outputNamed(output.name))
 			nodesAffected = nodesAffected + self.dagSetChildrenStale(dagNode)
 
 		currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
-		self.undoStack.push(depends_undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
+		self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
 
 		# Updates the drawNodes for each of the affected dagNodes
     	    	self.propWidget.refresh()
@@ -489,20 +489,20 @@ class MainWindow(QtGui.QMainWindow):
 		preSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
 
 		nodesAffected = list()
-		if propName == "Name" and propertyType is depends_node.DagNodeAttribute:
+		if propName == "Name" and propertyType is node.DagNodeAttribute:
 			if newValue != dagNode.name:
 				dagNode.setName(newValue)
 				nodesAffected = nodesAffected + [dagNode]
 				somethingChanged = True
 		else:
-			if propertyType is depends_node.DagNodeInput:
+			if propertyType is node.DagNodeInput:
 				if newValue != dagNode.inputValue(propName):
 					dagNode.setInputValue(propName, newValue)
 					nodesAffected = nodesAffected + self.dagNodeInputChanged(dagNode, dagNode.inputNamed(propName))
 					somethingChanged = True
 					self.propWidget.refresh()
 
-			elif propertyType is depends_node.DagNodeOutput:
+			elif propertyType is node.DagNodeOutput:
 				bothNames = propName.split('.')
 				if newValue != dagNode.outputValue(bothNames[0], bothNames[1]):
 					dagNode.setOutputValue(bothNames[0], bothNames[1], newValue)
@@ -510,7 +510,7 @@ class MainWindow(QtGui.QMainWindow):
 					nodesAffected = nodesAffected + self.dagNodeOutputChanged(dagNode, dagNode.outputNamed(bothNames[0]))
 					somethingChanged = True
 				
-			elif propertyType is depends_node.DagNodeAttribute:
+			elif propertyType is node.DagNodeAttribute:
 				if newValue != dagNode.attributeValue(propName):
 					dagNode.setAttributeValue(propName, newValue)
 					nodesAffected = nodesAffected + [dagNode]
@@ -525,7 +525,7 @@ class MainWindow(QtGui.QMainWindow):
 		# Undos aren't registered when the value doesn't actually change
 		if somethingChanged:
 			currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
-			self.undoStack.push(depends_undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene, self.propWidget))
+			self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene, self.propWidget))
 
 		# Updates the drawNodes for each of the affected dagNodes
 		self.graphicsScene.refreshDrawNodes(nodesAffected)
@@ -547,20 +547,20 @@ class MainWindow(QtGui.QMainWindow):
 			newRange = (newRange[0], None)
 		
 		nodesAffected = list()
-		if propertyType is depends_node.DagNodeInput:
+		if propertyType is node.DagNodeInput:
 			if newRange != dagNode.inputRange(propName, variableSubstitution=False):
 				dagNode.setInputRange(propName, newRange)
 				nodesAffected = nodesAffected + [dagNode]
 				registerUndo = True
 				
-		elif propertyType is depends_node.DagNodeOutput:
+		elif propertyType is node.DagNodeOutput:
 			if newRange != dagNode.outputRange(propName, variableSubstitution=False):
 				dagNode.setOutputRange(propName, newRange)
 				# Note: Changing the output range does not affect the staleness of the node
 				nodesAffected = nodesAffected + [dagNode]
 				registerUndo = True
 				
-		elif propertyType is depends_node.DagNodeAttribute:
+		elif propertyType is node.DagNodeAttribute:
 			if newRange != dagNode.attributeRange(propName, variableSubstitution=False):
 				dagNode.setAttributeRange(propName, newRange)
 				nodesAffected = nodesAffected + [dagNode]
@@ -568,7 +568,7 @@ class MainWindow(QtGui.QMainWindow):
 		# Undos aren't registered when the value doesn't actually change, 
 		if registerUndo:
 			currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
-			self.undoStack.push(depends_undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene, self.propWidget))
+			self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene, self.propWidget))
 
 		# Updates the drawNodes for each of the affected dagNodes
 		self.graphicsScene.refreshDrawNodes(nodesAffected)
@@ -678,7 +678,7 @@ class MainWindow(QtGui.QMainWindow):
 		affectedOutput = dagNode.outputAffectedByInput(input)
 
 		# If you have changed the input source, set this input's range based on the extents of the incoming range.
-		incomingDataPacket = self.dag.nodeOutputDataPacket(*depends_data_packet.nodeAndOutputFromScenegraphLocationString(input.value, self.dag))
+		incomingDataPacket = self.dag.nodeOutputDataPacket(*data_packet.nodeAndOutputFromScenegraphLocationString(input.value, self.dag))
 		if incomingDataPacket:
 			if incomingDataPacket.sequenceRange:
 				nodesAffected.append(dagNode)
@@ -740,31 +740,31 @@ class MainWindow(QtGui.QMainWindow):
 		singleDollarList = list()
 		doubleDollarList = list()
 		for input in dagNode.inputs():
-			vps = depends_variables.present(dagNode.inputValue(input.name, variableSubstitution=False))
+			vps = variables.present(dagNode.inputValue(input.name, variableSubstitution=False))
 			vss = (list(), list())
 			vss2 = (list(), list())
 			if dagNode.inputRange(input.name, variableSubstitution=False):
-				vss = depends_variables.present(dagNode.inputRange(input.name, variableSubstitution=False)[0])
-				vss2 = depends_variables.present(dagNode.inputRange(input.name, variableSubstitution=False)[1])
+				vss = variables.present(dagNode.inputRange(input.name, variableSubstitution=False)[0])
+				vss2 = variables.present(dagNode.inputRange(input.name, variableSubstitution=False)[1])
 			singleDollarList += vps[0] + vss[0] + vss2[0]
 			doubleDollarList += vps[1] + vss[1] + vss2[1]
 		for attribute in dagNode.attributes():
-			vps = depends_variables.present(dagNode.attributeValue(attribute.name, variableSubstitution=False))
+			vps = variables.present(dagNode.attributeValue(attribute.name, variableSubstitution=False))
 			vss = (list(), list())
 			vss2 = (list(), list())
 			if dagNode.attributeRange(attribute.name, variableSubstitution=False):
-				vss = depends_variables.present(dagNode.attributeRange(attribute.name, variableSubstitution=False)[0])
-				vss2 = depends_variables.present(dagNode.attributeRange(attribute.name, variableSubstitution=False)[1])
+				vss = variables.present(dagNode.attributeRange(attribute.name, variableSubstitution=False)[0])
+				vss2 = variables.present(dagNode.attributeRange(attribute.name, variableSubstitution=False)[1])
 			singleDollarList += vps[0] + vss[0] + vss2[0]
 			doubleDollarList += vps[1] + vss[1] + vss2[1]
 		for output in dagNode.outputs():
 			for subName in output.subOutputNames():
-				vps = depends_variables.present(dagNode.outputValue(output.name, subName, variableSubstitution=False))
+				vps = variables.present(dagNode.outputValue(output.name, subName, variableSubstitution=False))
 				vss = (list(), list())
 				vss2 = (list(), list())
 				if dagNode.outputRange(output.name, variableSubstitution=False):
-					vss = depends_variables.present(dagNode.outputRange(output.name, variableSubstitution=False)[0])
-					vss2 = depends_variables.present(dagNode.outputRange(output.name, variableSubstitution=False)[1])
+					vss = variables.present(dagNode.outputRange(output.name, variableSubstitution=False)[0])
+					vss2 = variables.present(dagNode.outputRange(output.name, variableSubstitution=False)[1])
 				singleDollarList += vps[0] + vss[0] + vss2[0]
 				doubleDollarList += vps[1] + vss[1] + vss2[1]
 		return (list(set(singleDollarList)), list(set(doubleDollarList)))
@@ -797,7 +797,7 @@ class MainWindow(QtGui.QMainWindow):
 		for dagNode in dagNodes:
 			(singleDollarVariables, doubleDollarVariables) = self.dagNodeVariablesUsed(dagNode)
 			for sdVariable in singleDollarVariables:
-				if sdVariable not in depends_variables.names():
+				if sdVariable not in variables.names():
 					raise RuntimeError("Depends variable $%s used in node '%s' does not exist in current environment." % (sdVariable, dagNode.name))
 
 		# Insure all $$ variables that are used, are present in the current environment
@@ -868,7 +868,7 @@ class MainWindow(QtGui.QMainWindow):
 					if not os.access(dirName, os.W_OK | os.X_OK):
 						raise RuntimeError("Node '%s' will attempt to write to a directory that you don't have permissions to (%s)." % (dagNode.name, dirName))
 				for key in output.value:
-					if depends_util.framespec.hasFrameSymbols(output.value[key]):
+					if util.framespec.hasFrameSymbols(output.value[key]):
 						if not output.getSeqRange():
 							raise RuntimeError("Node '%s' output '%s' has a string with frame symbols, but has no sequence range defined." % (dagNode.name, output.name))
 			
@@ -970,12 +970,12 @@ class MainWindow(QtGui.QMainWindow):
 		# Variable substitutions
 		self.clearVariableDictionary()
 		for v in snapshot["DAG"]["VARIABLE_SUBSTITIONS"]:
-			depends_variables.variableSubstitutions[v["NAME"]] = (v["VALUE"], False)
+			variables.variableSubstitutions[v["NAME"]] = (v["VALUE"], False)
 
 		# The current session gets a variable representing the location of the current workflow
-		if 'WORKFLOW_DIR' not in depends_variables.names():
-			depends_variables.add('WORKFLOW_DIR')
-		depends_variables.setx('WORKFLOW_DIR', os.path.dirname(filename), readOnly=True)
+		if 'WORKFLOW_DIR' not in variables.names():
+			variables.add('WORKFLOW_DIR')
+		variables.setx('WORKFLOW_DIR', os.path.dirname(filename), readOnly=True)
 
 		# Additional meta-data loading
 		if "RELOAD_PLUGINS_FILENAME_TEMP" in snapshot:
@@ -986,7 +986,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.undoStack.setClean()
 		self.workingFilename = filename
 		self.setWindowTitle("Depends (%s)" % self.workingFilename)
-		self.variableWidget.rebuild(depends_variables.variableSubstitutions)
+		self.variableWidget.rebuild(variables.variableSubstitutions)
 		return True
 
 		
@@ -1023,7 +1023,7 @@ class MainWindow(QtGui.QMainWindow):
 		connectionMetaDict = self.graphicsScene.connectionMetaDict()
 
 		# Store all but read-only variables to the state
-		varDicts = depends_variables.changeableList()
+		varDicts = variables.changeableList()
 
 		# TODO: A generic way to pass additional dicts into the snapshot function might be good.
 		#       The parameter list is getting long and specific!  (also, variableList->variableDict)
@@ -1060,7 +1060,7 @@ class MainWindow(QtGui.QMainWindow):
 		"""
 		Save the next version of the current file.
 		"""
-		nextVersionFilename = depends_util.nextFilenameVersion(self.workingFilename)
+		nextVersionFilename = util.nextFilenameVersion(self.workingFilename)
 		self.save(nextVersionFilename)
 		
 
@@ -1090,7 +1090,7 @@ class MainWindow(QtGui.QMainWindow):
 	
 			filenameIndexMinusOne = args.index('-workflow')
 			args[filenameIndexMinusOne+1] = filename
-		depends_util.restartProgram(args)
+		util.restartProgram(args)
 		
 	
 	def executeSelected(self, executeImmediately=False):
@@ -1142,7 +1142,7 @@ class MainWindow(QtGui.QMainWindow):
 		for dagNode in selDagNodes:
 			if self.dag.nodeGroupCount(dagNode) > 0:
 				raise RuntimeError("Nodes cannot currently be in more than one group.")
-		groupName = depends_util.generateUniqueNameSimiarToExisting('group', self.dag.nodeGroupDict.keys())
+		groupName = util.generateUniqueNameSimiarToExisting('group', self.dag.nodeGroupDict.keys())
 		self.dag.addNodeGroup(groupName, selDagNodes)
 		self.graphicsScene.addExistingGroupBox(groupName, selDagNodes)
 
@@ -1190,7 +1190,7 @@ class MainWindow(QtGui.QMainWindow):
 		types present in the current session.
 		"""
 		actionList = list()
-		for tipe in depends_node.dagNodeTypes():
+		for tipe in node.dagNodeTypes():
 			menuAction = QtGui.QAction(tipe().typeStr(), self, triggered=self.createNodeFromMenuStub)
 			menuAction.setData((tipe, None))
 			actionList.append(menuAction)
@@ -1221,7 +1221,7 @@ class MainWindow(QtGui.QMainWindow):
 		Creates the recipe menu actions from the recipe plugin directory.
 		"""
 		actionList = list()
-		for tipe in depends_output_recipe.outputRecipeTypes():
+		for tipe in output_recipe.outputRecipeTypes():
 			menuAction = QtGui.QAction(tipe().name(), self)
 			menuAction.setData(tipe)
 			actionList.append(menuAction)
@@ -1255,27 +1255,27 @@ class MainWindow(QtGui.QMainWindow):
 		#self.open('/tmp/foo.json')
 		#self.yesNoDialog("FOOBar")
 		
-		#print depends_util.nextFilenameVersion('/tmp/foo.bar.000.tif')
-		#print depends_util.nextFilenameVersion('/tmp/foobar_v001.tif')
-		#print depends_util.nextFilenameVersion('/tmp/foo.bar.001')		# "Fails" - but what does one expect?
-		#print depends_util.nextFilenameVersion('/tmp/foobar001')
-		#print depends_util.nextFilenameVersion('foo.bar.001.tif')
-		#print depends_util.nextFilenameVersion('foobar001')
-		#print depends_util.nextFilenameVersion('/tmp/foobar_v015.tif')
-		#print depends_util.nextFilenameVersion('/home/gardner/devDag/june01.json')
-		#print depends_util.nextFilenameVersion("/tmp/foo.####.tif")
-		#print depends_util.nextFilenameVersion("/tmp/foo005.####.tif")
-		#print depends_util.nextFilenameVersion("/tmp/foo####.tif")
-		#print depends_util.nextFilenameVersion("/tmp/foov002_####.tif")
-		#print depends_util.nextFilenameVersion("/tmp/foo.bar####.tif")
-		#print depends_util.nextFilenameVersion("/tmp/foo.003.####.tif")
-		#print depends_util.nextFilenameVersion("/tmp/foo.003.####.####.tif")
+		#print util.nextFilenameVersion('/tmp/foo.bar.000.tif')
+		#print util.nextFilenameVersion('/tmp/foobar_v001.tif')
+		#print util.nextFilenameVersion('/tmp/foo.bar.001')		# "Fails" - but what does one expect?
+		#print util.nextFilenameVersion('/tmp/foobar001')
+		#print util.nextFilenameVersion('foo.bar.001.tif')
+		#print util.nextFilenameVersion('foobar001')
+		#print util.nextFilenameVersion('/tmp/foobar_v015.tif')
+		#print util.nextFilenameVersion('/home/gardner/devDag/june01.json')
+		#print util.nextFilenameVersion("/tmp/foo.####.tif")
+		#print util.nextFilenameVersion("/tmp/foo005.####.tif")
+		#print util.nextFilenameVersion("/tmp/foo####.tif")
+		#print util.nextFilenameVersion("/tmp/foov002_####.tif")
+		#print util.nextFilenameVersion("/tmp/foo.bar####.tif")
+		#print util.nextFilenameVersion("/tmp/foo.003.####.tif")
+		#print util.nextFilenameVersion("/tmp/foo.003.####.####.tif")
 		
-		#print depends_variables.present('/$FOO/$HI/BOOBER/$$SRC_ROOT.$FOO')
+		#print variables.present('/$FOO/$HI/BOOBER/$$SRC_ROOT.$FOO')
 		#selectedDrawNodes = self.graphicsScene.selectedItems()
 		#if selectedDrawNodes:
 		#	executeNode = selectedDrawNodes[0].dagNode
-		#depends_util.dagSnapshotDiff(self.undoStack.command(0).oldSnap, self.undoStack.command(0).newSnap)
+		#util.dagSnapshotDiff(self.undoStack.command(0).oldSnap, self.undoStack.command(0).newSnap)
 
 		#self.dag.addNodeGroup([self.dag.node(name="Image_Transform"), 
 		#					   self.dag.node(name="Image_Transform_Dupe")])

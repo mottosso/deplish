@@ -6,8 +6,8 @@
 
 from PySide import QtCore, QtGui
 
-import depends_node
-import depends_data_packet
+import node
+import data_packet
 
 
 """
@@ -26,7 +26,7 @@ class SceneGraphWidget(QtGui.QWidget):
 	"""
 
 	# Signals
-	mouseover = QtCore.Signal(depends_node.DagNode)
+	mouseover = QtCore.Signal(node.DagNode)
 
 	def __init__(self, parent=None):
 		"""
@@ -102,7 +102,7 @@ class SceneGraphWidget(QtGui.QWidget):
 			# Add the text field with enhanced middle-button drag'n'drop functionality
 			class DraggableTextWidget(QtGui.QLabel):
 				# Signals
-				mouseover = QtCore.Signal(depends_node.DagNode)
+				mouseover = QtCore.Signal(node.DagNode)
 
 				def __init__(self, dataPacket, *args):
 					super(DraggableTextWidget, self).__init__(*args)
@@ -113,7 +113,7 @@ class SceneGraphWidget(QtGui.QWidget):
 					#if event.buttons() != QtCore.Qt.MiddleButton:
 					#	return QtGui.QLabel().mousePressEvent(event)
 					mimeData = QtCore.QMimeData()
-					dragText = depends_data_packet.scenegraphLocationString(self.pointerToDataPacket)
+					dragText = data_packet.scenegraphLocationString(self.pointerToDataPacket)
 					mimeData.setText(dragText)
 					drag = QtGui.QDrag(self)
 					drag.setMimeData(mimeData)
@@ -133,7 +133,7 @@ class SceneGraphWidget(QtGui.QWidget):
 			colorString = "00aa00" if dataPacket.dataPresent() else "aa0000"
 			if disabled:
 				colorString = "868686"
-			textWidget.setText("<html><font color=\"#%s\">&nbsp;%s</font> - %s</html>" % (colorString, dataPacket.typeStr(), depends_data_packet.shorthandScenegraphLocationString(dataPacket)))
+			textWidget.setText("<html><font color=\"#%s\">&nbsp;%s</font> - %s</html>" % (colorString, dataPacket.typeStr(), data_packet.shorthandScenegraphLocationString(dataPacket)))
 			self.tableWidget.setCellWidget(index, 0, textWidget)
 
 			# Chain the text edit mouseover signal out with property name and value
