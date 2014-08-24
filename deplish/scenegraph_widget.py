@@ -16,8 +16,6 @@ can also mouseover a given item, which emits a mouseover QT signal.
 """
 
 
-###############################################################################
-###############################################################################
 class SceneGraphWidget(QtGui.QWidget):
 	"""
 	A QT graphics widget that displays items in a given scenegraph and the 

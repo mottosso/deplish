@@ -1,0 +1,320 @@
+$dark-color:      rgb(25, 25, 25)
+$mid-color:       rgb(50, 50, 50)
+$bright-color:    rgb(120, 120, 120)
+
+$red-color:       hsl(0, 50%, 50%)
+$highlight-color: hsl(35%, 50%, 80%)
+
+$border-width: 1px
+
+
+QToolTip
+    border: 1px solid black
+    background-color: #ffa02f
+    padding: 1px
+    border-radius: 3px
+    opacity: 100
+
+QWidget
+    outline: none
+    border: none
+    font-family: Consolas
+    color: rgb(200, 200, 200)
+    background-color: $mid-color
+
+    &:disabled
+        color: #545454
+        background-color: #323232
+
+    &:focus
+        border: $border-width solid $bright-color
+
+    &:item:selected
+        background-color: rgb(100, 100, 100)
+
+
+QMainWindow
+    &::separator:hover
+        background-color: #ffa02f
+        color: white
+        padding-left: 4px
+        border: 1px solid #6c6c6c
+        spacing: 3px
+
+    &::separator
+        background-color: #343434
+        color: white
+        padding-left: 4px
+        border: 1px solid #4c4c4c
+        spacing: 3px
+
+QMenuBar::item
+    background: transparent
+
+QMenu
+    border: 1px solid #000
+    &::item
+        padding: 2px 20px 2px 20px
+        &:selected
+            color: #000000
+
+QAbstractItemView
+    background-color: $dark-color
+
+QLineEdit
+    background-color: #5d5d5d
+    padding: 1px
+    border-style: solid
+    border: 1px solid #1e1e1e
+    border-radius: 5
+
+QPushButton
+    color: #b1b1b1
+    background-color: #464646
+    border-width: 1px
+    border-color: #1e1e1e
+    border-style: solid
+    border-radius: 6
+    padding: 3px
+    font-size: 12px
+    padding-left: 5px
+    padding-right: 5px
+
+    &:pressed
+        background-color: #252525
+
+    &:hover
+        border: $border-width solid $bright-color
+
+QComboBox
+    selection-background-color: #ffaa00
+    background-color: #464646
+    border-style: solid
+    border: 1px solid #1e1e1e
+    border-radius: 5
+
+    &:hover
+        border: $border-width solid $bright-color
+
+QComboBox:on
+    padding-top: 3px
+    padding-left: 4px
+    background-color: #252525
+    selection-background-color: #ffaa00
+
+QComboBox QAbstractItemView
+    border: $border-width solid darkgray
+    selection-background-color: $bright-color
+
+QComboBox::drop-down
+    subcontrol-origin: padding
+    subcontrol-position: top right
+    width: 15px
+
+    border-left-width: 0px
+    border-left-color: darkgray
+    border-left-style: solid
+    border-top-right-radius: 3px
+    border-bottom-right-radius: 3px
+
+QComboBox::down-arrow
+    image: url(:/down_arrow.png)
+
+QGroupBox:focus
+    border: $border-width solid $bright-color
+
+QTextEdit:focus
+    border: $border-width solid $bright-color
+
+QScrollBar
+    &:horizontal
+        border: 1px solid #222222
+        background: #484848
+        height: 7px
+        margin: 0px 16px 0 16px
+
+    &::handle:horizontal
+        background: #ffa02f
+        min-height: 20px
+        border-radius: 2px
+
+    &::add-line:horizontal
+        border: 1px solid #1b1b19
+        border-radius: 2px
+        background: $bright-color
+        width: 14px
+        subcontrol-position: right
+        subcontrol-origin: margin
+
+    &::sub-line:horizontal
+        border: 1px solid #1b1b19
+        border-radius: 2px
+        background: $bright-color
+        width: 14px
+        subcontrol-position: left
+        subcontrol-origin: margin
+
+    &::right-arrow:horizontal, QScrollBar::left-arrow:horizontal
+        border: 1px solid black
+        width: 1px
+        height: 1px
+        background: white
+
+    &::add-page:horizontal, QScrollBar::sub-page:horizontal
+        background: none
+
+    &:vertical
+        background: #484848
+        width: 7px
+        margin: 16px 0 16px 0
+        border: 1px solid #222222
+
+    &::handle:vertical
+        background: #ffa02f
+        min-height: 20px
+        border-radius: 2px
+
+    &::add-line:vertical
+        border: 1px solid #1b1b19
+        border-radius: 2px
+        background: $bright-color
+        height: 14px
+        subcontrol-position: bottom
+        subcontrol-origin: margin
+
+    &::sub-line:vertical
+        border: 1px solid #1b1b19
+        border-radius: 2px
+        background: #ffa02f
+        height: 14px
+        subcontrol-position: top
+        subcontrol-origin: margin
+
+    &::up-arrow:vertical, QScrollBar::down-arrow:vertical
+        border: 1px solid black
+        width: 1px
+        height: 1px
+        background: white
+
+    &::add-page:vertical, QScrollBar::sub-page:vertical
+        background: none
+
+QTextEdit
+    background-color: #242424
+
+QPlainTextEdit
+    background-color: #242424
+
+QHeaderView::section
+    background-color: #656565
+    color: white
+    padding-left: 4px
+    border: 1px solid #6c6c6c
+
+QCheckBox:disabled
+    color: #414141
+
+QDockWidget::title
+    text-align: center
+    spacing: 3px
+    background-color: #323232
+
+QDockWidget::close-button, QDockWidget::float-button
+    text-align: center
+    spacing: 1px
+    background-color: #323232
+
+QDockWidget::close-button:hover, QDockWidget::float-button:hover
+    background: #242424
+
+QDockWidget::close-button:pressed, QDockWidget::float-button:pressed
+    padding: 1px -1px -1px 1px
+
+QToolBar::handle
+    spacing: 3px
+    background: url(:/images/handle.png)
+
+QMenu::separator
+    height: 2px
+    background-color: #343434
+    color: white
+    padding-left: 4px
+    margin-left: 10px
+    margin-right: 5px
+
+QProgressBar
+    border: $border-width solid grey
+    border-radius: 5px
+    text-align: center
+
+QProgressBar::chunk
+    background-color: $bright-color
+    width: 2.15px
+    margin: 0.5px
+
+QTabBar::tab
+    color: #b1b1b1
+    border: 1px solid #444
+    border-bottom-style: none
+    background-color: #323232
+    padding-left: 10px
+    padding-right: 10px
+    padding-top: 3px
+    padding-bottom: 2px
+    margin-right: -1px
+
+QTabWidget::pane
+    border: 1px solid #444
+    top: 1px
+
+QTabBar::tab:last
+    margin-right: 0
+    border-top-right-radius: 3px
+
+QTabBar::tab:first:selected
+    margin-left: 0px
+    border-top-left-radius: 3px
+
+QTabBar::tab:selected
+    color: #b1b1b1
+    border-bottom-style: solid
+    margin-top: 3px
+    background-color: #343434
+
+QTabBar::tab:selected
+    border-top-left-radius: 3px
+    border-top-right-radius: 3px
+    margin-bottom: 0px
+
+QTabBar::tab:selected:hover
+    border-top-left-radius: 3px
+    border-top-right-radius: 3px
+    background-color: #ffaa00
+
+QRadioButton::indicator:checked, QRadioButton::indicator:unchecked
+    color: #b1b1b1
+    background-color: #323232
+    border: 1px solid #b1b1b1
+    border-radius: 6px
+
+QRadioButton::indicator:checked
+    background-color: #ffaa00
+
+QCheckBox::indicator
+    color: #b1b1b1
+    background-color: #323232
+    border: 1px solid #b1b1b1
+    width: 9px
+    height: 9px
+
+QRadioButton::indicator
+    border-radius: 6px
+
+QRadioButton::indicator:hover, QCheckBox::indicator:hover
+    border: 1px solid #ffaa00
+
+QCheckBox::indicator:checked
+    image: url(:/images/checkbox.png)
+
+QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
+    border: 1px solid $bright-color
