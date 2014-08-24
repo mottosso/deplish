@@ -608,7 +608,7 @@ class DagNode(object):
 		return list()
 	
 	
-	def executeList(self, dataPacketDict, splitOperations=False):
+	def executeList(self):
 		"""
 		Given a dict of input dataPackets, return a list of commandline arguments
 		that are easily digested by an execution recipe.
@@ -624,7 +624,7 @@ class DagNode(object):
 	###########################################################################
 	## Children may inherit these
 	###########################################################################
-	def preProcess(self, dataPacketDict):
+	def preProcess(self):
 		"""
 		This runs *before* the executeList function is executed.
 		Given a dict of input dataPackets (often times not used), create a list
@@ -633,7 +633,7 @@ class DagNode(object):
 		return list()
 
 
-	def postProcess(self, dataPacketDict):
+	def postProcess(self):
 		"""
 		This runs *after* the executeList function is executed.
 		Given a dict of input dataPackets (often times not used), create a list
@@ -739,77 +739,6 @@ def loadChildNodesFromPaths(pathList):
 ###############################################################################
 ## Built-in nodes
 ###############################################################################
-class DagNodeMaya(DagNode):
-	"""
-	A node that handles communication with the external program, Maya.
-	"""
-	
-	# TODO : Currently this node is extremely rough.  The theory is sound, though,
-	#        and it can be fleshed out as time goes on.
-	
-	def __init__(self, name=""):
-		DagNode.__init__(self, name)
-		# Special members
-		self.comms = None
-
-
-	def _defineInputs(self):
-		"""
-		"""
-		doc = ("This node can take any data packet as input and display it in the Maya user interface.")
-		return [DagNodeInput('Any', data_packet.DataPacket, True, docString=doc)]
-	
-		
-	def _defineOutputs(self):
-		"""
-		"""
-		return [] 
-
-
-	def _defineAttributes(self):
-		"""
-		"""
-		exeDoc = ("The name of the executable that launches maya.")
-		portDoc = ("The port to talk to the maya listener on.")
-		return [DagNodeAttribute('executable', 'maya', docString=exeDoc),
-				DagNodeAttribute('talkPort', '6002', docString=portDoc)]
-
-
-	def executeList(self, dataPacketDict):
-		"""
-		"""
-		if self.comms is None:
-			raise RuntimeError("Communication port not present")
-		
-		# Test for an external maya server.
-		self.comms.setBroadcastPort(int(self.attributeValue('talkPort')))
-		self.comms.sendString('Test message')
-		print "Node reports message sent successfully."
-		
-		# Push the requested data over to maya.
-		for dp in dataPackets:
-			dataPacket = dp[1]
-			dataPacketType = dataPacket.typeStr()
-			if dataPacketType == "Lightfield":
-				print "Sending message to Maya to load lightfield."
-				message = "LOAD <--> %s %s <--> %s %s" % (dataPacket.fileDescriptors['filename'].value, dataPacket.fileDescriptors['transform'].value, 
-														  dataPacket.sourceNode.uuid, dataPacket.sourceNode.name)
-				print message
-			elif dataPacketType == "Pointcloud":
-				print "Sending message to Maya to load pointcloud."
-				message = "LOAD <--> %s %s <--> %s %s" % (dataPacket.fileDescriptors['filename'].value, dataPacket.fileDescriptors['transform'].value, 
-														  dataPacket.sourceNode.uuid, dataPacket.sourceNode.name)
-				print message
-			else:
-				print "The Maya DAG node is unsure what to do with a datapacket of type %s." % dataPacket.typeStr()
-				continue
-			self.comms.sendString(message)
-
-		# Wait patiently.
-		
-
-###############################################################################
-###############################################################################
 class DagNodeDot(DagNode):
 	"""
 	A dot node is a node that simply collects connections and passes them on.
@@ -828,7 +757,7 @@ class DagNodeDot(DagNode):
 	def _defineAttributes(self):
 		return []
 
-	def executeList(self, dataPacketDict):
+	def executeList(self):
 		pass
 
 
@@ -852,5 +781,5 @@ class DagNodeCoalesce(DagNode):
 	def _defineAttributes(self):
 		return []
 
-	def executeList(self, dataPacketDict):
+	def executeList(self):
 		pass
