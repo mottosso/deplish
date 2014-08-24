@@ -4,13 +4,13 @@
 # BSD license (LICENSE.txt for details).
 #
 
-import depends_node
-import depends_data_packet
+import node
+import data_packet
 
 ###############################################################################
 ## Sample nodes used for demonstration purposes
 ###############################################################################
-class DagNodeLs(depends_node.DagNode):
+class DagNodeLs(node.DagNode):
 	"""
 	"""
 	def _defineInputs(self):
@@ -22,7 +22,7 @@ class DagNodeLs(depends_node.DagNode):
 	def _defineOutputs(self):
 		"""
 		"""
-		return [depends_node.DagNodeOutput('File', depends_data_packet.DataPacketTextFile)] 
+		return [node.DagNodeOutput('File', data_packet.DataPacketTextFile)] 
 
 
 	def _defineAttributes(self):
@@ -30,8 +30,8 @@ class DagNodeLs(depends_node.DagNode):
 		"""
 		docPath = ("A path to do a unix 'ls' command on.")
 		docLong = ("Add the -la argument to the ls command.")
-		return [depends_node.DagNodeAttribute('listPath', "", docString=docPath),
-		      depends_node.DagNodeAttribute('long', "True", docString=docLong)] 
+		return [node.DagNodeAttribute('listPath', "", docString=docPath),
+		      node.DagNodeAttribute('long', "True", docString=docLong)] 
 
 
 	def executeList(self, dataPacketDict, splitOperations=False):
@@ -51,27 +51,27 @@ class DagNodeLs(depends_node.DagNode):
 
 ################################################################################
 ################################################################################
-class DagNodeAwk(depends_node.DagNode):
+class DagNodeAwk(node.DagNode):
 	"""
 	"""
 	def _defineInputs(self):
 		"""
 		"""
 		doc = ("A file or files to run awk on.")
-		return [depends_node.DagNodeInput('File', depends_data_packet.DataPacketTextFile, True, docString=doc)]
+		return [node.DagNodeInput('File', data_packet.DataPacketTextFile, True, docString=doc)]
 	
 		
 	def _defineOutputs(self):
 		"""
 		"""
-		return [depends_node.DagNodeOutput('File', depends_data_packet.DataPacketTextFile)] 
+		return [node.DagNodeOutput('File', data_packet.DataPacketTextFile)] 
 
 
 	def _defineAttributes(self):
 		"""
 		"""
 		docCommand = ("The awk command(s) to execute.")
-		return [depends_node.DagNodeAttribute('command', "", docString=docCommand)] 
+		return [node.DagNodeAttribute('command', "", docString=docCommand)] 
 
 
 	def executeList(self, dataPacketDict, splitOperations=False):

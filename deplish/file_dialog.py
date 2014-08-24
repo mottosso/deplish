@@ -4,7 +4,7 @@
 # BSD license (LICENSE.txt for details).
 #
 
-import depends_util
+import util
 
 
 """
@@ -67,6 +67,6 @@ def loadChildFileDialogsFromPaths(pathList):
 	directories into the node namespace. TODO better docs
 	"""
 	for path in pathList:
-		nodeClassDict = depends_util.allClassesOfInheritedTypeFromDir(path, FileDialog)
+		nodeClassDict = util.allClassesOfInheritedTypeFromDir(path, FileDialog)
 		for nc in nodeClassDict:
 			globals()[nc] = nodeClassDict[nc]

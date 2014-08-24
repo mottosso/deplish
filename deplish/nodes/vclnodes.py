@@ -4,8 +4,8 @@
 # BSD license (LICENSE.txt for details).
 #
 
-import depends_node
-import depends_data_packet
+import node
+import data_packet
 
 
 """
@@ -15,27 +15,27 @@ import depends_data_packet
 ###############################################################################
 ## Nodes useful in the VCL
 ###############################################################################
-class DagNodeLightprobeReduce(depends_node.DagNode):
+class DagNodeLightprobeReduce(node.DagNode):
 	"""
 	"""
 	def _defineInputs(self):
 		"""
 		"""
 		doc = ("A series of lightprobes to be reduced to a unique, new set.")
-		return [depends_node.DagNodeInput('Lightprobe', depends_data_packet.DataPacketLightprobe, True, docString=doc)]
+		return [node.DagNodeInput('Lightprobe', data_packet.DataPacketLightprobe, True, docString=doc)]
 	
 		
 	def _defineOutputs(self):
 		"""
 		"""
-		return [depends_node.DagNodeOutput('Lightprobe', depends_data_packet.DataPacketLightprobe)] 
+		return [node.DagNodeOutput('Lightprobe', data_packet.DataPacketLightprobe)] 
 
 
 	def _defineAttributes(self):
 		"""
 		"""
 		doc = ("The resulting number of lightprobes.")
-		return [depends_node.DagNodeAttribute('resultCount', "", docString=doc)] 
+		return [node.DagNodeAttribute('resultCount', "", docString=doc)] 
 
 
 	def executeList(self, dataPacketDict, splitOperations=False):
@@ -65,27 +65,27 @@ class DagNodeLightprobeReduce(depends_node.DagNode):
 
 ###############################################################################
 ###############################################################################
-class DagNodeStructureFromMotion(depends_node.DagNode):
+class DagNodeStructureFromMotion(node.DagNode):
 	"""
 	"""
 	def _defineInputs(self):
 		"""
 		"""
 		doc = ("A sequence of images to generate geometry from.")
-		return [depends_node.DagNodeInput('ImageTypes', depends_data_packet.DataPacketImage, True, docString=doc)]
+		return [node.DagNodeInput('ImageTypes', data_packet.DataPacketImage, True, docString=doc)]
 	
 		
 	def _defineOutputs(self):
 		"""
 		"""
-		return [depends_node.DagNodeOutput('Pointcloud', depends_data_packet.DataPacketPointcloud)] 
+		return [node.DagNodeOutput('Pointcloud', data_packet.DataPacketPointcloud)] 
 		
 	
 	def _defineAttributes(self):
 		"""
 		"""
 		doc = ("General command-line parameters for this node.")
-		return [depends_node.DagNodeAttribute('parameters', "", docString=doc)] 
+		return [node.DagNodeAttribute('parameters', "", docString=doc)] 
 
 
 	def executeList(self, dataPacketDict, splitOperations=False):
@@ -96,27 +96,27 @@ class DagNodeStructureFromMotion(depends_node.DagNode):
 
 ###############################################################################
 ###############################################################################
-class DagNodeColorspaceApply(depends_node.DagNode):
+class DagNodeColorspaceApply(node.DagNode):
 	"""
 	"""
 	def _defineInputs(self):
 		"""
 		"""
 		doc = ("A sequence or a single image to transform into a new colorspace.")
-		return [depends_node.DagNodeInput('ImageTypes', depends_data_packet.DataPacketImage, True, docString=doc)]
+		return [node.DagNodeInput('ImageTypes', data_packet.DataPacketImage, True, docString=doc)]
 	
 		
 	def _defineOutputs(self):
 		"""
 		"""
-		return [depends_node.DagNodeOutput('ImageTypes', depends_data_packet.DataPacketImage)] 
+		return [node.DagNodeOutput('ImageTypes', data_packet.DataPacketImage)] 
 
 
 	def _defineAttributes(self):
 		"""
 		"""
 		doc = ("The colorspace curve file to apply.")
-		return [depends_node.DagNodeAttribute('colorCurveFile', "", isFileType=True, docString=doc)] 
+		return [node.DagNodeAttribute('colorCurveFile', "", isFileType=True, docString=doc)] 
 
 
 	def executeList(self, dataPacketDict, splitOperations=False):
@@ -144,7 +144,7 @@ class DagNodeColorspaceApply(depends_node.DagNode):
 
 ###############################################################################
 ###############################################################################
-class DagNodeLightfieldRasterize(depends_node.DagNode):
+class DagNodeLightfieldRasterize(node.DagNode):
 	"""
 	"""
 	def _defineInputs(self):
@@ -152,14 +152,14 @@ class DagNodeLightfieldRasterize(depends_node.DagNode):
 		"""
 		probeDoc = ("A sequence of light probes to be rasterized into a lightfield")
 		boxDoc = ("A box to bound the volume of the resulting lightfield")
-		return [depends_node.DagNodeInput('Lightprobe', depends_data_packet.DataPacketLightprobe, True, docString=probeDoc), 
-				depends_node.DagNodeInput('BoundingBox', depends_data_packet.DataPacketBoundingBox, True, docString=boxDoc)]
+		return [node.DagNodeInput('Lightprobe', data_packet.DataPacketLightprobe, True, docString=probeDoc), 
+				node.DagNodeInput('BoundingBox', data_packet.DataPacketBoundingBox, True, docString=boxDoc)]
 
 
 	def _defineOutputs(self):
 		"""
 		"""
-		return [depends_node.DagNodeOutput('Lightfield', depends_data_packet.DataPacketLightfield)] 
+		return [node.DagNodeOutput('Lightfield', data_packet.DataPacketLightfield)] 
 
 
 	def _defineAttributes(self):
@@ -171,12 +171,12 @@ class DagNodeLightfieldRasterize(depends_node.DagNode):
 		probeSamplerDoc = ("One of the following: UNIFORMPROBESAMPLER, ?, ?.")
 		projectorDoc = ("One of the following: 3DRGBLINEDRAWING, ?, ?.")
 		dimsDoc = ("Three integers representing the final lightfield dimensions.")
-		return [depends_node.DagNodeAttribute('b', 'O', docString=bDoc),
-				depends_node.DagNodeAttribute('threads', '4', docString=threadsDoc),
-				depends_node.DagNodeAttribute('g', '', docString=gDoc),
-				depends_node.DagNodeAttribute('probeSampler', 'UNIFORMPROBESAMPLER', docString=probeSamplerDoc),
-				depends_node.DagNodeAttribute('projector', '3DRGBLINEDRAWING', docString=projectorDoc),
-				depends_node.DagNodeAttribute('dims', '256 256 256', docString=dimsDoc)]
+		return [node.DagNodeAttribute('b', 'O', docString=bDoc),
+				node.DagNodeAttribute('threads', '4', docString=threadsDoc),
+				node.DagNodeAttribute('g', '', docString=gDoc),
+				node.DagNodeAttribute('probeSampler', 'UNIFORMPROBESAMPLER', docString=probeSamplerDoc),
+				node.DagNodeAttribute('projector', '3DRGBLINEDRAWING', docString=projectorDoc),
+				node.DagNodeAttribute('dims', '256 256 256', docString=dimsDoc)]
 
 
 	def executeList(self, dataPacketDict, splitOperations=False):
@@ -224,27 +224,27 @@ class DagNodeLightfieldRasterize(depends_node.DagNode):
 
 ###############################################################################
 ###############################################################################
-class DagNodeImageTransform(depends_node.DagNode):
+class DagNodeImageTransform(node.DagNode):
 	"""
 	"""
 	def _defineInputs(self):
 		"""
 		"""
 		doc=("Images to be transformed")
-		return [depends_node.DagNodeInput('ImageTypes', depends_data_packet.DataPacketImage, True, docString=doc)]
+		return [node.DagNodeInput('ImageTypes', data_packet.DataPacketImage, True, docString=doc)]
 	
 		
 	def _defineOutputs(self):
 		"""
 		"""
-		return [depends_node.DagNodeOutput('ImageTypes', depends_data_packet.DataPacketImage)] 
+		return [node.DagNodeOutput('ImageTypes', data_packet.DataPacketImage)] 
 	
 
 	def _defineAttributes(self):
 		"""
 		"""
 		doc = ("Enter a non-1.0 value here to scale the image.")
-		return [depends_node.DagNodeAttribute('scale', '100', docString=doc)] 
+		return [node.DagNodeAttribute('scale', '100', docString=doc)] 
 
 
 	def executeList(self, dataPacketDict, splitOperations=False):

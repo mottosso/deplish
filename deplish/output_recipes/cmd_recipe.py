@@ -2,14 +2,14 @@
 import tempfile
 import subprocess
 
-import depends_output_recipe
+import output_recipe
 
 
-class CmdOutputRecipe(depends_output_recipe.OutputRecipe):
+class CmdOutputRecipe(output_recipe.OutputRecipe):
     """Implement bash_recipe.py equivalent for Windows"""
 
     def __init__(self):
-        depends_output_recipe.OutputRecipe.__init__(self)
+        output_recipe.OutputRecipe.__init__(self)
 
     def name(self):
         return "Cmd Output Recipe"

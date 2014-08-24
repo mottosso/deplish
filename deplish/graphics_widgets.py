@@ -8,8 +8,8 @@ import math
 
 from PySide import QtCore, QtGui
 
-import depends_node
-import depends_undo_commands
+import node
+import undo_commands
 
 
 """
@@ -120,7 +120,7 @@ class DrawNode(QtGui.QGraphicsItem):
 		self.clickSnap = None
 		self.clickPosition = None
 
-		if type(self.dagNode) == depends_node.DagNodeDot:
+		if type(self.dagNode) == node.DagNodeDot:
 			self.width = 15
 			self.height = 15
 
@@ -237,7 +237,7 @@ class DrawNode(QtGui.QGraphicsItem):
 		painter.drawRoundedRect(fullRect, 5, 5)
 
 		# No lights or text for dot nodes
-		if type(self.dagNode) == depends_node.DagNodeDot:
+		if type(self.dagNode) == node.DagNodeDot:
 			return
 
 		# The "data present" light
@@ -284,7 +284,7 @@ class DrawNode(QtGui.QGraphicsItem):
 		# Don't register undos for selections without moves
 		if self.pos() != self.clickPosition:
 			currentSnap = self.scene().dag.snapshot(nodeMetaDict=self.scene().nodeMetaDict(), connectionMetaDict=self.scene().connectionMetaDict())
-			self.scene().undoStack().push(depends_undo_commands.SceneOnlyUndoCommand(self.clickSnap, currentSnap, self.scene()))
+			self.scene().undoStack().push(undo_commands.SceneOnlyUndoCommand(self.clickSnap, currentSnap, self.scene()))
 		QtGui.QGraphicsItem.mouseReleaseEvent(self, event)
 
 
@@ -478,7 +478,7 @@ class DrawEdge(QtGui.QGraphicsItem):
 				self.setDestDrawNode(None)
 
 				currentSnap = self.scene().dag.snapshot(nodeMetaDict=self.scene().nodeMetaDict(), connectionMetaDict=self.scene().connectionMetaDict())
-				self.scene().undoStack().push(depends_undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.scene().dag, self.scene()))
+				self.scene().undoStack().push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.scene().dag, self.scene()))
 			self.adjust()
 			# TODO: Hoover-color nodes as potential targets
 		QtGui.QGraphicsItem.mouseMoveEvent(self, event)
@@ -512,7 +512,7 @@ class DrawEdge(QtGui.QGraphicsItem):
 					self.adjust()
 
 					currentSnap = self.scene().dag.snapshot(nodeMetaDict=self.scene().nodeMetaDict(), connectionMetaDict=self.scene().connectionMetaDict())
-					self.scene().undoStack().push(depends_undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.scene().dag, self.scene()))
+					self.scene().undoStack().push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.scene().dag, self.scene()))
 					return QtGui.QGraphicsItem.mouseReleaseEvent(self, event)
 
 			# No hits?  Delete yourself (You have no chance to win!)
@@ -575,8 +575,8 @@ class SceneWidget(QtGui.QGraphicsScene):
 	"""
 	
 	# Signals
-	nodesDisconnected = QtCore.Signal(depends_node.DagNode, depends_node.DagNode)
-	nodesConnected = QtCore.Signal(depends_node.DagNode, depends_node.DagNode)
+	nodesDisconnected = QtCore.Signal(node.DagNode, node.DagNode)
+	nodesConnected = QtCore.Signal(node.DagNode, node.DagNode)
 
 	def __init__(self, parent=None):
 		"""

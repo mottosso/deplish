@@ -6,9 +6,9 @@
 
 from PySide import QtCore, QtGui
 
-import depends_node
-import depends_data_packet
-import depends_file_dialog
+import node
+import data_packet
+import file_dialog
 
 
 """
@@ -98,9 +98,9 @@ class GeneralEdit(QtGui.QWidget):
 		self.setLayout(outerLayout)
 
 		# Chain signals out with property name and value
-		self.lineEdit.editingFinished.connect(lambda: self.valueChanged.emit(self.label.text(), self.lineEdit.text(), depends_node.DagNodeAttribute))
-		self.rangeStart.editingFinished.connect(lambda: self.rangeChanged.emit(self.label.text(), (self.rangeStart.text(), self.rangeEnd.text()), depends_node.DagNodeAttribute))
-		self.rangeEnd.editingFinished.connect(lambda: self.rangeChanged.emit(self.label.text(), (self.rangeStart.text(), self.rangeEnd.text()), depends_node.DagNodeAttribute))
+		self.lineEdit.editingFinished.connect(lambda: self.valueChanged.emit(self.label.text(), self.lineEdit.text(), node.DagNodeAttribute))
+		self.rangeStart.editingFinished.connect(lambda: self.rangeChanged.emit(self.label.text(), (self.rangeStart.text(), self.rangeEnd.text()), node.DagNodeAttribute))
+		self.rangeEnd.editingFinished.connect(lambda: self.rangeChanged.emit(self.label.text(), (self.rangeStart.text(), self.rangeEnd.text()), node.DagNodeAttribute))
 		self.expandButton.pressed.connect(self.expandButtonPressed)
 		self.fileDialogButton.pressed.connect(self.fileDialogButtonPressed)
 
@@ -142,9 +142,9 @@ class GeneralEdit(QtGui.QWidget):
 		"""
 		selectedFile = None
 		if self.customFileDialogName:
-			selectedFile = depends_file_dialog.fileDialogOfType(self.customFileDialogName).browse()
+			selectedFile = file_dialog.fileDialogOfType(self.customFileDialogName).browse()
 		else:
-			selectedFile = depends_file_dialog.fileDialogOfType("Standard Qt File Dialog").browse()
+			selectedFile = file_dialog.fileDialogOfType("Standard Qt File Dialog").browse()
 		if not selectedFile:
 			return
 		self.setValue(selectedFile)
@@ -162,7 +162,7 @@ class InputEdit(QtGui.QWidget):
 	# Signals
 	valueChanged = QtCore.Signal(str, str, type)
 	rangeChanged = QtCore.Signal(str, object, type)
-	mouseover = QtCore.Signal(depends_node.DagNode)
+	mouseover = QtCore.Signal(node.DagNode)
 	
 	def __init__(self, input=None, dagNode=None, dag=None, parent=None):
 		"""
@@ -238,9 +238,9 @@ class InputEdit(QtGui.QWidget):
 		self.setAcceptDrops(True)
 
 		# The lineEdit gets a textChanged signal since editingFinished never occurs with the read-only field
-		self.lineEdit.textChanged.connect(lambda: self.valueChanged.emit(self.label.text(), self.inputHasBeenChangedTo, depends_node.DagNodeInput))
-		self.rangeStart.editingFinished.connect(lambda: self.rangeChanged.emit(self.label.text(), (self.rangeStart.text(), self.rangeEnd.text()), depends_node.DagNodeInput))
-		self.rangeEnd.editingFinished.connect(lambda: self.rangeChanged.emit(self.label.text(), (self.rangeStart.text(), self.rangeEnd.text()), depends_node.DagNodeInput))
+		self.lineEdit.textChanged.connect(lambda: self.valueChanged.emit(self.label.text(), self.inputHasBeenChangedTo, node.DagNodeInput))
+		self.rangeStart.editingFinished.connect(lambda: self.rangeChanged.emit(self.label.text(), (self.rangeStart.text(), self.rangeEnd.text()), node.DagNodeInput))
+		self.rangeEnd.editingFinished.connect(lambda: self.rangeChanged.emit(self.label.text(), (self.rangeStart.text(), self.rangeEnd.text()), node.DagNodeInput))
 		self.expandButton.pressed.connect(self.expandButtonPressed)
 		self.removeInputButton.pressed.connect(self.removeInputButtonPressed)
 
@@ -257,7 +257,7 @@ class InputEdit(QtGui.QWidget):
 			self.lineEdit.setStyleSheet("")
 			#self.lineEdit.setPalette(self.originalLineEditPalette)
 			return
-		connectionUuid = depends_data_packet.uuidFromScenegraphLocationString(self.input.value)
+		connectionUuid = data_packet.uuidFromScenegraphLocationString(self.input.value)
 		for dagNode in dagNodeList:
 			if dagNode.uuid == connectionUuid:
 				self.lineEdit.setStyleSheet("background-color: rgb(91, 114, 138)")
@@ -272,7 +272,7 @@ class InputEdit(QtGui.QWidget):
 		you are referring to by emitting a mouseover signal.
 		"""
 		idString = self.input.value
-		connectedDagNode = self.dag.node(nUUID=depends_data_packet.uuidFromScenegraphLocationString(idString))
+		connectedDagNode = self.dag.node(nUUID=data_packet.uuidFromScenegraphLocationString(idString))
 		if (connectedDagNode):
 			self.mouseover.emit([connectedDagNode])
 		QtGui.QWidget.enterEvent(self, event)
@@ -292,7 +292,7 @@ class InputEdit(QtGui.QWidget):
 		let QT know it is okay to drop it (also, show a cute icon stating as much)
 		"""
 		if event.mimeData().hasFormat("text/plain"):
-			outputType = self.dag.nodeOutputType(*depends_data_packet.nodeAndOutputFromScenegraphLocationString(event.mimeData().text(), self.dag))
+			outputType = self.dag.nodeOutputType(*data_packet.nodeAndOutputFromScenegraphLocationString(event.mimeData().text(), self.dag))
 			if outputType not in self.dagNode.dataPacketTypesAccepted():
 				QtGui.QWidget.dragEnterEvent(self, event)
 				return
@@ -328,7 +328,7 @@ class InputEdit(QtGui.QWidget):
 		if self.input.value != "":
 			dataPacketForInput = self.dag.nodeInputDataPacket(self.dagNode, self.input)
 			self.input.value = oldValue
-			self.lineEdit.setText(depends_data_packet.shorthandScenegraphLocationString(dataPacketForInput))
+			self.lineEdit.setText(data_packet.shorthandScenegraphLocationString(dataPacketForInput))
 		else:
 			self.lineEdit.setText("")
 		
@@ -351,7 +351,7 @@ class InputEdit(QtGui.QWidget):
 		self.rangeEnd.setText(seqRange[1] if seqRange[1] else "")
 
 		# Code to clamp sequence ranges.  Need to put this in the callback for text editing
-		#incomingDataPacket = self.dag.nodeOutputDataPacket(*depends_data_packet.nodeAndOutputFromScenegraphLocationString(self.input.value, self.dag))
+		#incomingDataPacket = self.dag.nodeOutputDataPacket(*data_packet.nodeAndOutputFromScenegraphLocationString(self.input.value, self.dag))
 		#incomingRange = incomingDataPacket.sequenceRange
 		#if incomingRange:
 		#	if incomingRange[0] and int(incomingRange[0]) > int(seqRange[0]):
@@ -410,7 +410,7 @@ class OutputEdit(QtGui.QWidget):
 		for outputType in self.output.allPossibleOutputTypes():
 			subGroup = QtGui.QGroupBox("%s (Type: %s)" % (output.name, outputType.__name__[len("DataPacket"):]))
 			subLayout = QtGui.QVBoxLayout()
-			subOutputs = depends_data_packet.filenameDictForDataPacketType(outputType)
+			subOutputs = data_packet.filenameDictForDataPacketType(outputType)
 			i = 0
 			for subOutputName in subOutputs:
 				newThing = GeneralEdit(label=subOutputName, 
@@ -443,7 +443,7 @@ class OutputEdit(QtGui.QWidget):
 		"""
 		# Try to resist converting this into a lambda, as it seems chaining lambdas causes
 		# some issues (segfault) when Qt cleans up after itself on close.
-		self.valueChanged.emit(self.output.name+"."+subName, value, depends_node.DagNodeOutput)
+		self.valueChanged.emit(self.output.name+"."+subName, value, node.DagNodeOutput)
 
 
 	def rangeChangedStub(self, subName, seqRange, type):
@@ -453,7 +453,7 @@ class OutputEdit(QtGui.QWidget):
 		# TODO: Might not be needed anymore (legacy)?
 		#Try to resist converting this into a lambda, as it seems chaining lambdas causes
 		#some issues (segfault) when Qt cleans up after itself on close.
-		self.rangeChanged.emit(self.output.name, seqRange, depends_node.DagNodeOutput)
+		self.rangeChanged.emit(self.output.name, seqRange, node.DagNodeOutput)
 
 
 	def refresh(self):
@@ -521,9 +521,9 @@ class PropWidget(QtGui.QWidget):
 	"""
 
 	# Signals
-	attrChanged = QtCore.Signal(depends_node.DagNode, str, str, type)
-	rangeChanged = QtCore.Signal(depends_node.DagNode, str, object, type)
-	mouseover = QtCore.Signal(depends_node.DagNode)
+	attrChanged = QtCore.Signal(node.DagNode, str, str, type)
+	rangeChanged = QtCore.Signal(node.DagNode, str, object, type)
+	mouseover = QtCore.Signal(node.DagNode)
 
 	def __init__(self, parent=None):
 		"""

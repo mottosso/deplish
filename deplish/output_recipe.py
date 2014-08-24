@@ -4,7 +4,7 @@
 # BSD license (LICENSE.txt for details).
 #
 
-import depends_util
+import util
 
 
 """
@@ -65,6 +65,6 @@ def loadChildRecipesFromPaths(pathList):
 	directories into the node namespace. TODO better docs
 	"""
 	for path in pathList:
-		recipeClassDict = depends_util.allClassesOfInheritedTypeFromDir(path, OutputRecipe)
+		recipeClassDict = util.allClassesOfInheritedTypeFromDir(path, OutputRecipe)
 		for rc in recipeClassDict:
 			globals()[rc] = recipeClassDict[rc]

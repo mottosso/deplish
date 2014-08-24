@@ -8,9 +8,9 @@ import re
 import copy
 import uuid
 
-import depends_util
-import depends_variables
-import depends_data_packet
+import util
+import variables
+import data_packet
 
 
 """
@@ -78,7 +78,7 @@ class DagNodeInput(object):
 		that is inherited from its base type.
 		"""
 		inputTypeList = set([self.dataPacketType])
-		inputTypeList |= set(depends_util.allClassChildren(self.dataPacketType))
+		inputTypeList |= set(util.allClassChildren(self.dataPacketType))
 		return inputTypeList
 		
 
@@ -116,7 +116,7 @@ class DagNodeOutput(object):
 		#       its datapacket and all the datapacket's children types
 		allPossibleFileDescriptorNames = set()
 		for tipe in self.allPossibleOutputTypes():
-			for fdName in depends_data_packet.filenameDictForDataPacketType(tipe):
+			for fdName in data_packet.filenameDictForDataPacketType(tipe):
 				allPossibleFileDescriptorNames.add(fdName)
 		for fdName in allPossibleFileDescriptorNames:
 			self.value[fdName] = ""
@@ -128,7 +128,7 @@ class DagNodeOutput(object):
 		Returns a list of all type data packet types this node can output.
 		"""
 		outputTypeList = set([self.dataPacketType])
-		outputTypeList |= set(depends_util.allClassChildren(self.dataPacketType))
+		outputTypeList |= set(util.allClassChildren(self.dataPacketType))
 		return outputTypeList
 
 
@@ -325,7 +325,7 @@ class DagNode(object):
 		"""
 		value = self.inputNamed(inputName).value
 		if variableSubstitution:
-			value = depends_variables.substitute(value)
+			value = variables.substitute(value)
 		return value
 		
 	
@@ -336,7 +336,7 @@ class DagNode(object):
 		"""
 		seqRange = self.inputNamed(inputName).seqRange
 		if seqRange and seqRange[0] and seqRange[1] and variableSubstitution:
-			seqRange = (depends_variables.substitute(seqRange[0]), depends_variables.substitute(seqRange[1]))
+			seqRange = (variables.substitute(seqRange[0]), variables.substitute(seqRange[1]))
 		return seqRange
 
 	
@@ -386,7 +386,7 @@ class DagNode(object):
 		"""
 		value = self.outputNamed(outputName).value[subOutputName]
 		if variableSubstitution:
-			value = depends_variables.substitute(value)
+			value = variables.substitute(value)
 		return value
 
 
@@ -397,7 +397,7 @@ class DagNode(object):
 		"""
 		seqRange = self.outputNamed(outputName).seqRange
 		if seqRange and seqRange[0] and seqRange[1] and variableSubstitution:
-			seqRange = (depends_variables.substitute(seqRange[0]), depends_variables.substitute(seqRange[1]))
+			seqRange = (variables.substitute(seqRange[0]), variables.substitute(seqRange[1]))
 		return seqRange
 
 
@@ -408,7 +408,7 @@ class DagNode(object):
 		"""
 		filename = self.outputValue(outputName, subOutputName)
 		seqRange = self.outputRange(outputName)
-		return depends_util.framespec(filename, seqRange)
+		return util.framespec(filename, seqRange)
 	
 
 	###########################################################################
@@ -456,7 +456,7 @@ class DagNode(object):
 		"""
 		value = self.attributeNamed(attrName).value
 		if variableSubstitution:
-			value = depends_variables.substitute(value)
+			value = variables.substitute(value)
 		return value
 
 
@@ -467,7 +467,7 @@ class DagNode(object):
 		"""
 		seqRange = self.attributeNamed(attrName).seqRange
 		if variableSubstitution:
-			seqRange = (depends_variables.substitute(seqRange[0]), depends_variables.substitute(seqRange[1]))
+			seqRange = (variables.substitute(seqRange[0]), variables.substitute(seqRange[1]))
 		return seqRange
 
 
@@ -716,7 +716,7 @@ def generateReadDagNodes():
 	Construct a collection of dag nodes for each type of data packet loaded in
 	the current session.
 	"""
-	for packetType in depends_util.allClassChildren(depends_data_packet.DataPacket):
+	for packetType in util.allClassChildren(data_packet.DataPacket):
 		# Create a new class based on all child objects of DataPacket
 		NewClassType = readNodeClassFactory(packetType)
 		# Install class into current module
@@ -731,7 +731,7 @@ def loadChildNodesFromPaths(pathList):
 	directories into the node namespace.
 	"""
 	for path in pathList:
-		nodeClassDict = depends_util.allClassesOfInheritedTypeFromDir(path, DagNode)
+		nodeClassDict = util.allClassesOfInheritedTypeFromDir(path, DagNode)
 		for nc in nodeClassDict:
 			globals()[nc] = nodeClassDict[nc]
 
@@ -757,7 +757,7 @@ class DagNodeMaya(DagNode):
 		"""
 		"""
 		doc = ("This node can take any data packet as input and display it in the Maya user interface.")
-		return [DagNodeInput('Any', depends_data_packet.DataPacket, True, docString=doc)]
+		return [DagNodeInput('Any', data_packet.DataPacket, True, docString=doc)]
 	
 		
 	def _defineOutputs(self):

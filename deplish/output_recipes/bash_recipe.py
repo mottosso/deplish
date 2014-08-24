@@ -8,7 +8,7 @@ import os
 import tempfile
 import subprocess
 
-import depends_output_recipe
+import output_recipe
 
 
 """
@@ -20,11 +20,11 @@ to write others such as 'batch' or 'tcsh'.
 
 ################################################################################
 ################################################################################
-class BashOutputRecipe(depends_output_recipe.OutputRecipe):
+class BashOutputRecipe(output_recipe.OutputRecipe):
 	"""
 	"""
 	def __init__(self):
-		depends_output_recipe.OutputRecipe.__init__(self)
+		output_recipe.OutputRecipe.__init__(self)
 
 
 	def name(self):

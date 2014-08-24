@@ -1,6 +1,7 @@
 import sys
 from PySide import QtGui, QtCore
-import depends_main_window
+
+import main_window
 
 
 if __name__ == '__main__':
@@ -9,7 +10,7 @@ if __name__ == '__main__':
     with open('darkorange.css', 'r') as f:
         app.setStyleSheet(f.read())
 
-    win = depends_main_window.MainWindow()
+    win = main_window.MainWindow()
     win.show()
 
     sys.exit(app.exec_())

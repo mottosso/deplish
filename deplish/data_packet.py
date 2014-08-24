@@ -8,8 +8,8 @@ import os
 import re
 import uuid
 
-import depends_node
-import depends_util
+import node
+import util
 
 
 """
@@ -134,7 +134,7 @@ class DataPacket(object):
 		"""
 		if descriptorName not in self.filenames:
 			raise RuntimeError("DataPacket %s does not contain a file descriptor named %s." % (shorthandScenegraphLocationString(self), descriptorName))
-		return depends_util.framespec(self.filenames[descriptorName], self.sequenceRange)
+		return util.framespec(self.filenames[descriptorName], self.sequenceRange)
 	
 
 	def dataPresent(self, specificFileDescriptorName=None):
@@ -149,7 +149,7 @@ class DataPacket(object):
 		else:
 			fdNameList = self.filenames.keys()
 		for fileDescriptor in fdNameList:
-			if not self._filesExist(depends_util.framespec(self.filenames[fileDescriptor], self.sequenceRange)):
+			if not self._filesExist(util.framespec(self.filenames[fileDescriptor], self.sequenceRange)):
 				return False
 		return True
 
@@ -174,6 +174,6 @@ def loadChildDataPacketsFromPaths(pathList):
 	in those directories into the data_packet namespace.
 	"""
 	for path in pathList:
-		dpClassDict = depends_util.allClassesOfInheritedTypeFromDir(path, DataPacket)
+		dpClassDict = util.allClassesOfInheritedTypeFromDir(path, DataPacket)
 		for dpc in dpClassDict:
 			globals()[dpc] = dpClassDict[dpc]

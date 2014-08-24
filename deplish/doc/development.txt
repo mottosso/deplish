@@ -37,15 +37,15 @@ Example plugins come bundled in the default plugin subdirectories in the Depends
 A) Creating new node types
 --------------------------
 All node types must inherit from the Depends DagNode class.
-Importing the depends_node module is necessary.  It is guaranteed to be in the 
-  Python module path, so just "import depends_node".
+Importing the node module is necessary.  It is guaranteed to be in the 
+  Python module path, so just "import node".
 If you want to make a new dag node, you currently must name it DagNodeXXX 
   (where XXX is a camel-caps styled type for the dag node).  YUCK!  This will
   change.
-Inherit as so: class DagNodeDirectoryList(depends_node.DagNode)
+Inherit as so: class DagNodeDirectoryList(node.DagNode)
 Four functions *must* be overloaded to insure proper operation:
   def _defineInputs(self):
-    This function returns a list of depends_node.DagNodeInput objects that
+    This function returns a list of node.DagNodeInput objects that
       represent all the inputs the node can take.
     DagNodeInput objects have names (identifier and visible in the UI)
     DagNodeInput objects have a defined data packet type they accept (note 
@@ -54,7 +54,7 @@ Four functions *must* be overloaded to insure proper operation:
     DagNodeInput objects have a documentation string that pops up on mouseover.
   
   def _defineOutputs(self):
-    This function returns a list of depends_node.DagNodeOutput objects that
+    This function returns a list of node.DagNodeOutput objects that
       represent all the data this node can output.  BUT BE CAREFUL!  Just return
       a list one-element long (for now).
     DagNodeOutput objects have names (identifier and visible in the UI).
@@ -64,7 +64,7 @@ Four functions *must* be overloaded to insure proper operation:
       the standard dialog doesn't pop up when clicking the 'browse' button.
   
   def _defineAttributes(self):
-    This function returns a lit of depends_node.DagNodeAttribute objects that
+    This function returns a lit of node.DagNodeAttribute objects that
       represent all the user-specifiable parameters this node can take.
     DagNodeAttribute objects have a default value
     DagNodeAttribute objects have a flag stating if it's a file (file dialog
@@ -119,7 +119,7 @@ Inheritance note: A datapacket type can inherit from another type.  This makes
   it possible for a node that takes the parent data packet type to automatically
   take its children as well.
 So normally you inherit as so: 
-  class DataPacketImage(depends_data_packet.DataPacket):
+  class DataPacketImage(data_packet.DataPacket):
 But if you want a more interesting image (eg. with a transform), inherit as so:
   class DataPacketLightprobe(DataPacketImage):
 See the Lightprobe data packet type as an example.
@@ -129,7 +129,7 @@ C) Creating new file dialogs
 ----------------------------
 File dialogs are simple to create.
 Create a new class inherited from the Depends FileDialog class:
-  class QtFileDialog(depends_file_dialog.FileDialog)
+  class QtFileDialog(file_dialog.FileDialog)
 Then overload the name function:
   def name(self):
     return "Standard Qt File Dialog"
@@ -148,7 +148,7 @@ Node attributes and outputs can use the file dialog you've created by specifying
 D) Creating new output recipes
 ------------------------------
 New output recipes are inherited from the Depends OutputRecipe class as such:
-  class BashOutputRecipe(depends_output_recipe.OutputRecipe)
+  class BashOutputRecipe(output_recipe.OutputRecipe)
 Overloading the name function is required:
   def name(self)
 Then the meat occurs in the must-override generate function:
