@@ -4,6 +4,15 @@
 # BSD license (LICENSE.txt for details).
 #
 
+"""Main GUI
+
+The main window which contains the dependency graph view widget and a dock for 
+additional windows.  Executing the program from the commandline interface 
+creates one of these windows (and therefore all startup routines execute), but 
+does not display it.
+
+"""
+
 import os
 import sys
 import json
@@ -27,27 +36,17 @@ import graphics_widgets
 import scenegraph_widget
 
 
-"""
-The main window which contains the dependency graph view widget and a dock for 
-additional windows.  Executing the program from the commandline interface 
-creates one of these windows (and therefore all startup routines execute), but 
-does not display it.
-"""
-
-
-###############################################################################
-###############################################################################
 class MainWindow(QtGui.QMainWindow):
-	"""
+	"""Construct main UI
+
 	This class constructs the UI, consisting of the many windows, menu items,
 	undo managers, plugin systems, workflow variables, etc.  It also holds 
-	functions to manage what happens when dag nodes change (see "DAG management"
-	section), loading and saving of DAG snapshots, and much 
+	functions to manage what happens when dag nodes change (see
+	"DAG management" section) and loading and saving of DAG snapshots.
+
 	"""
 
 	def __init__(self, startFile="", parent=None):
-		"""
-		"""
 		QtGui.QMainWindow.__init__(self, parent)
 
 		# Add the DAG widget
@@ -124,7 +123,6 @@ class MainWindow(QtGui.QMainWindow):
 		executeMenu.addSeparator()
 		executeMenu.addAction(QtGui.QAction("W&ipe stale status", self, shortcut= "Ctrl+W", triggered=self.clearStaleStatus))
 		executeMenu.addAction(QtGui.QAction("Version &Up outputs", self, shortcut= "Ctrl+U", triggered=self.versionUpSelectedOutputFilenames))
-		#executeMenu.addAction(QtGui.QAction("&Test Menu Item", self, shortcut= "Ctrl+T", triggered=self.testMenuItem))
 		executeMenu.addSeparator()
 		executeMenu.addAction(QtGui.QAction("&Reload plugins", self, shortcut= "Ctrl+0", triggered=self.reloadPlugins))
 		windowMenu = self.menuBar().addMenu("&Window")
@@ -197,11 +195,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.variableWidget.setVariable.connect(variables.setx)
 		self.variableWidget.removeVariable.connect(variables.remove)
 		self.undoStack.cleanChanged.connect(self.setWindowTitleClean)
-		
 
-	###########################################################################
-	## Event overrides
-	###########################################################################
 	def closeEvent(self, event):
 		"""
 		Save program settings and ask "are you sure" if there are unsaved changes.
@@ -215,10 +209,6 @@ class MainWindow(QtGui.QMainWindow):
 		self.saveSettings()
 		QtGui.QMainWindow.closeEvent(self, event)
 
-
-	###########################################################################
-	## Internal functionality
-	###########################################################################
 	def updateScenegraph(self, dagNodes):
 		"""
 		Rebuild the scenegraph widget based on the given dag nodes.

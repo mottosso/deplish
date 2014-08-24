@@ -4,19 +4,17 @@
 # BSD license (LICENSE.txt for details).
 #
 
-from PySide import QtCore, QtGui, QtOpenGL
-
-import file_dialog
-
 
 """
 This is an example plugin for replacing the file dialogs in Depends.
 It runs a standard QT file dialog that lets the user choose their file.
 """
 
+from PySide import QtCore, QtGui, QtOpenGL
 
-################################################################################
-################################################################################
+import file_dialog
+
+
 class QtFileDialog(file_dialog.FileDialog):
 	"""
 	"""

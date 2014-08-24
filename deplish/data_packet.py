@@ -4,6 +4,18 @@
 # BSD license (LICENSE.txt for details).
 #
 
+"""Plugin-system
+
+A data packet is the absolute minimum amount of information needed to represent
+a knowable-thing on disk. Each datapacket can represent a single item or a
+sequence of items.
+
+Only file information is transferred in a DataPacket, and only file information
+should ever be transferred.  Other values that should be shared between nodes
+should happen through the variable substitution mechanisms.
+
+"""
+
 import os
 import re
 import uuid
@@ -12,20 +24,6 @@ import node
 import util
 
 
-"""
-A data packet is the absolute minimum amount of information needed to represent
-a knowable-thing on disk.  Each datapacket can represent a single item or a
-sequence of items.
-
-Only file information is transferred in a DataPacket, and only file information
-should ever be transferred.  Other values that should be shared between nodes
-should happen through the variable substitution mechanisms.
-"""
-
-
-###############################################################################
-## Utility
-###############################################################################
 def filenameDictForDataPacketType(dataPacketType):
 	"""
 	Return a dict of fileDescriptors for a given DataPacket type.

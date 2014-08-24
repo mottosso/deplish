@@ -4,6 +4,16 @@
 # BSD license (LICENSE.txt for details).
 #
 
+"""Directed Acyclic graph
+
+This module contains a class defining a directed acyclic dependency graph for
+the Depends workflow manager.  A series of DagNode objects are connected 
+together using a networkx DiGraph.  Functionality relating to the nodes and
+their relation to eachother is provided as well as scenegraph generation, node
+relation, and snapshot generation.
+
+"""
+
 import re
 import uuid
 import copy
@@ -15,23 +25,13 @@ import util
 import data_packet
 
 
-"""
-This module contains a class defining a directed acyclic dependency graph for
-the Depends workflow manager.  A series of DagNode objects are connected 
-together using a networkx DiGraph.  Functionality relating to the nodes and
-their relation to eachother is provided as well as scenegraph generation, node
-relation, and snapshot generation.
-"""
+class DAG(object):
+	"""Container of DiGraph and DagNode
 
-
-###############################################################################
-## Base class
-###############################################################################
-class DAG:
-	"""
 	The primary dependency graph containing a networkx DiGraph of DagNode 
 	objects connected to eachother.  Also keeps track of which nodes are
 	considered stale, and which nodes are members of various node groups.
+
 	"""
 
 	def __init__(self):
@@ -46,9 +46,7 @@ class DAG:
 
 
 	def node(self, name=None, nUUID=None):
-		"""
-		Return a node with the given name or UUID.
-		"""
+		"""Return a node with the given name or UUID"""
 		for dagNode in self.network:
 			if name and dagNode.name == name:
 				return dagNode
@@ -58,10 +56,13 @@ class DAG:
 
 
 	def nodes(self, nodeType=None):
-		"""
-		Return a list of all nodes, nodes of a certain type, or nodes that have 
+		"""Return a list of all nodes
+
+		Or nodes of a certain type, or nodes that have 
 		names that match a regex pattern.
+
 		"""
+
 		returnList = list()
 		for dagNode in self.network:
 			if not nodeType:
