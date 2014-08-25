@@ -4,39 +4,28 @@
 # BSD license (LICENSE.txt for details).
 #
 
-import util
-
-
 """
 A class and collection of functions that assist in loading file dialog plugins.
 Creating one's own file dialog consists of inheriting from the FileDialog 
 class, setting a unique name, and overloading the browse function.
 """
 
+import util
 
-###############################################################################
-## Utility
-###############################################################################
+
 def fileDialogTypes():
-	"""
-	Return a list of available file dialog types.
-	"""
+	"""Return a list of available file dialog types"""
 	return FileDialog.__subclasses__()
 
 
 def fileDialogOfType(typeName):
-	"""
-	"""
 	for fdt in fileDialogTypes():
 		if fdt().name() == typeName:
 			return fdt()
+	
 	raise RuntimeError("Custom file dialog of type '%s' is not loaded in this session." % typeName)
-	return None
 
 
-###############################################################################
-## FileDialog base class
-###############################################################################
 class FileDialog(object):
 	"""
 	A simple parent class that new file dialog plugins can inherit from.

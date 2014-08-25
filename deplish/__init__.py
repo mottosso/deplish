@@ -1,1 +1,1 @@
-from .depends_version import *
+from .version import *
