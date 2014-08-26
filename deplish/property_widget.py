@@ -633,34 +633,34 @@ class PropWidget(QtGui.QWidget):
         without a full reconstruction of the widget.
         """
         groupBoxes = self.findChildren(QtGui.QGroupBox)
-        inputBox = None
+        #inputBox = None
         attributeBox = None
-        outputBox = None
+        #outputBox = None
         for gb in groupBoxes:
             title = gb.title()
-            if title == "Inputs": inputBox = gb
-            elif title == "Attributes": attributeBox = gb
-            elif title == "Outputs": outputBox = gb
+            #if title == "Inputs": inputBox = gb
+            if title == "Attributes": attributeBox = gb
+            #elif title == "Outputs": outputBox = gb
         
-        if inputBox:
-            inputEdits = inputBox.findChildren(InputEdit)
-            for inputEdit in inputEdits:
-                inputEdit.blockSignals(True)
-                inputName = inputEdit.label.text()
-                inputEdit.setValue(self.dagNode.inputValue(inputName, variableSubstitution=False))
-                inputEdit.setRange(self.dagNode.inputRange(inputName, variableSubstitution=False))
-                inputEdit.blockSignals(False)
+        #if inputBox:
+        #    inputEdits = inputBox.findChildren(InputEdit)
+        #    for inputEdit in inputEdits:
+        #        inputEdit.blockSignals(True)
+        #        inputName = inputEdit.label.text()
+        #        inputEdit.setValue(self.dagNode.inputValue(inputName, variableSubstitution=False))
+        #        inputEdit.setRange(self.dagNode.inputRange(inputName, variableSubstitution=False))
+        #        inputEdit.blockSignals(False)
         if attributeBox:
             attributeEdits = attributeBox.findChildren(AttrEdit)
             for attrEdit in attributeEdits:
                 attrEdit.blockSignals(True)
                 attributeName = attrEdit.label.text()
-                attrEdit.setValue(self.dagNode.attributeValue(attributeName, variableSubstitution=False))
-                attrEdit.setRange(self.dagNode.attributeRange(attributeName, variableSubstitution=False))
+                attrEdit.setValue(self.dagNode.attribute_value(attributeName, variableSubstitution=False))
+                attrEdit.setRange(self.dagNode.attribute_range(attributeName, variableSubstitution=False))
                 attrEdit.blockSignals(False)
-        if outputBox:
-            outputEdits = outputBox.findChildren(OutputEdit)
-            for outputEdit in outputEdits:
-                outputEdit.refresh()
+        #if outputBox:
+        #    outputEdits = outputBox.findChildren(OutputEdit)
+        #    for outputEdit in outputEdits:
+        #        outputEdit.refresh()
                 
                 

@@ -118,8 +118,6 @@ class MainWindow(QtGui.QMainWindow):
         executeMenu.addAction(QtGui.QAction("&Execute Graph", self, shortcut= "Ctrl+E", triggered=lambda: self.dag.execute_graph()))
         executeMenu.addAction(QtGui.QAction("Execute Up To &Selected Node", self, shortcut= "Ctrl+Shift+E", triggered=lambda: self.executeSelected(executeImmediately=True)))
         executeMenu.addSeparator()
-        executeMenu.addAction(QtGui.QAction("Version &Up outputs", self, shortcut= "Ctrl+U", triggered=self.versionUpSelectedOutputFilenames))
-        executeMenu.addSeparator()
         executeMenu.addAction(QtGui.QAction("&Reload plugins", self, shortcut= "Ctrl+0", triggered=self.reloadPlugins))
         windowMenu = self.menuBar().addMenu("&Window")
         windowMenu.addAction(self.propDock.toggleViewAction())
@@ -378,32 +376,12 @@ class MainWindow(QtGui.QMainWindow):
         self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
 
 
-    def versionUpOutputFilenames(self, dagNodesToVersionUp):
-        """
-        Increment the filename version of all output filenames in a given
-        list of dag nodes.
-        """
-        # TODO: Likely remove this function for 'Publish' as it seems somewhat irrelevant?
-        preSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
-
-        nodesAffected = list()
-        for dagNode in self.selectedDagNodes():
-            for output in dagNode.outputs():
-                for soName in output.subOutputNames():
-                    if not output.value[soName]:
-                        continue
-                    currentValue = output.value[soName]
-                    updatedValue = util.nextFilenameVersion(currentValue)
-                    dagNode.setOutputValue(output.name, soName, updatedValue)
-                    nodesAffected = nodesAffected + self.dagNodeOutputChanged(dagNode, dagNode.outputNamed(output.name))
-            nodesAffected = nodesAffected
-
         currentSnap = self.dag.snapshot(nodeMetaDict=self.graphicsScene.nodeMetaDict(), connectionMetaDict=self.graphicsScene.connectionMetaDict())
         self.undoStack.push(undo_commands.DagAndSceneUndoCommand(preSnap, currentSnap, self.dag, self.graphicsScene))
 
         # Updates the drawNodes for each of the affected dagNodes
         self.propWidget.refresh()
-        self.graphicsScene.refreshDrawNodes(nodesAffected)
+        self.graphicsScene.refreshDrawNodes()
 
 
     def nodesDisconnected(self, fromDagNode, toDagNode):
@@ -578,8 +556,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         nodesAffected = [fromDagNode]
 
-        allNodesAfter = self.dag.allNodesAfter(fromDagNode)
-        allNodesBefore = self.dag.allNodesBefore(fromDagNode) + [fromDagNode]
+        allNodesAfter = self.dag.all_nodes_after(fromDagNode)
+        allNodesBefore = self.dag.all_nodes_before(fromDagNode) + [fromDagNode]
         for afterNode in allNodesAfter:
             for input in afterNode.inputs():
                 inputNode = self.dag.nodeInputComesFromNode(afterNode, input)[0]
@@ -633,7 +611,7 @@ class MainWindow(QtGui.QMainWindow):
         nodesAffected = list()
 
         # Input types downstream may no longer be able to connect to this node.  Handle recursively.
-        allAffectedNodes = self.dag.allNodesDependingOnNode(dagNode, recursion=False)
+        allAffectedNodes = self.dag.all_nodes_depending_on_node(dagNode, recursion=False)
         for affectedNode in allAffectedNodes:
             for input in affectedNode.inputs():
                 nodeComingInOutputType = self.dag.nodeOutputType(*self.dag.nodeInputComesFromNode(affectedNode, input))
@@ -644,7 +622,7 @@ class MainWindow(QtGui.QMainWindow):
                     nodesAffected.append(affectedNode)
         
         # The range of directly-connected inputs may need to be adjusted
-        directlyAffectedNodes = self.dag.allNodesDependingOnNode(dagNode, recursion=False)
+        directlyAffectedNodes = self.dag.all_nodes_depending_on_node(dagNode, recursion=False)
         for affectedNode in directlyAffectedNodes:
             for input in affectedNode.inputs():
                 (incomingNode, incomingOutput) = self.dag.nodeInputComesFromNode(affectedNode, input)
@@ -1016,17 +994,6 @@ class MainWindow(QtGui.QMainWindow):
             return
         self.graphicsScene.removeExistingGroupBox(groupNameInDag)
         self.dag.removeNodeGroup(nodeListToRemove=selDagNodes)
-        
-
-    def versionUpSelectedOutputFilenames(self):
-        """
-        Version up the output filenames for each of the selected nodes using
-        self.versionUpOutputFilenames().
-        """
-        dagNodesToVersionUp = self.selectedDagNodes()
-        if not dagNodesToVersionUp:
-            return
-        self.versionUpOutputFilenames(dagNodesToVersionUp)
 
 
     def createNodeFromMenuStub(self):
@@ -1053,51 +1020,3 @@ class MainWindow(QtGui.QMainWindow):
             menuAction.setData((tipe, None))
             actionList.append(menuAction)
         return actionList
-        
-    
-    def testMenuItem(self):
-        """
-        You can do whatever you want in here!
-        """
-        #selectedDrawNodes = self.graphicsScene.selectedItems()
-        #if len(selectedDrawNodes) > 1 or not selectedDrawNodes:
-        #    return
-        #an = self.dag.allNodesDependingOnNode(selectedDrawNodes[0].dagNode, recursion=False)
-        #an = self.dag.allNodesAfter(selectedDrawNodes[0].dagNode)
-        #an = self.dag.nodeOutputGoesTo(selectedDrawNodes[0].dagNode, selectedDrawNodes[0].dagNode.outputs()[0])
-        #for n in an:
-        #    print n
-        #    #print n[1].name
-        #self.save('/tmp/foo.json')
-        #self.open('/tmp/foo.json')
-        #self.yesNoDialog("FOOBar")
-        
-        #print util.nextFilenameVersion('/tmp/foo.bar.000.tif')
-        #print util.nextFilenameVersion('/tmp/foobar_v001.tif')
-        #print util.nextFilenameVersion('/tmp/foo.bar.001')        # "Fails" - but what does one expect?
-        #print util.nextFilenameVersion('/tmp/foobar001')
-        #print util.nextFilenameVersion('foo.bar.001.tif')
-        #print util.nextFilenameVersion('foobar001')
-        #print util.nextFilenameVersion('/tmp/foobar_v015.tif')
-        #print util.nextFilenameVersion('/home/gardner/devDag/june01.json')
-        #print util.nextFilenameVersion("/tmp/foo.####.tif")
-        #print util.nextFilenameVersion("/tmp/foo005.####.tif")
-        #print util.nextFilenameVersion("/tmp/foo####.tif")
-        #print util.nextFilenameVersion("/tmp/foov002_####.tif")
-        #print util.nextFilenameVersion("/tmp/foo.bar####.tif")
-        #print util.nextFilenameVersion("/tmp/foo.003.####.tif")
-        #print util.nextFilenameVersion("/tmp/foo.003.####.####.tif")
-        
-        #print variables.present('/$FOO/$HI/BOOBER/$$SRC_ROOT.$FOO')
-        #selectedDrawNodes = self.graphicsScene.selectedItems()
-        #if selectedDrawNodes:
-        #    executeNode = selectedDrawNodes[0].dagNode
-        #util.dagSnapshotDiff(self.undoStack.command(0).oldSnap, self.undoStack.command(0).newSnap)
-
-        #self.dag.addNodeGroup([self.dag.node(name="Image_Transform"), 
-        #                       self.dag.node(name="Image_Transform_Dupe")])
-        #print self.dag.nodeGroupList
-        
-        #print self.dag.nodeInGroupNamed(self.selectedDagNodes()[0])
-
-        print self.dagNodeVariablesUsed(self.selectedDagNodes()[0])

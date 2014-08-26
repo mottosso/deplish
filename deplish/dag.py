@@ -132,9 +132,12 @@ class DAG(object):
         self.network.remove_edge(endNode, startNode)
     
 
+    ###########################################################################
+    ## Graph Execution/Evaluation
+    ###########################################################################
     def buildSceneGraph(self, atNode):
         """
-        Evaluate the DAG in a postorder fashion to create a list of the data 
+        Evaluate the DAG in a postorder fashion to create a list of the data
         packets in the scene graph sorted by execution order.
         """
         dagPathList = list()
@@ -158,15 +161,13 @@ class DAG(object):
 
         return data
 
+
     def execute_up_to_node(self, node):
         """
             Execute everything required for and up to the given node and not beyond.
         """
-        parents = self.network.successors(node)
-        nodes = parents + [node]
-        sub_graph_eval = networkx.topological_sort(self.network, nodes, reverse=True)
-
-        self.execute_graph(node_eval=sub_graph_eval)
+        node_eval_order = networkx.dfs_postorder_nodes(self.network, node)
+        self.execute_graph(node_eval=node_eval_order)
 
 
     def execute_graph(self, node_eval=None):
@@ -251,7 +252,7 @@ class DAG(object):
         return inOrderNodes
 
 
-    def allNodesBefore(self, dagNode):
+    def all_nodes_before(self, dagNode):
         """
         Return a list of all nodes "before" the given node in the DAG.
         Effectively a list of nodes this node can use as input.
@@ -259,7 +260,7 @@ class DAG(object):
         return list(networkx.descendants(self.network, dagNode))
     
 
-    def allNodesAfter(self, dagNode):
+    def all_nodes_after(self, dagNode):
         """
         Return a list of all nodes "after" the given node in the DAG.
         Effectively a list of nodes that might rely on this node for input.
@@ -267,14 +268,14 @@ class DAG(object):
         return list(networkx.ancestors(self.network, dagNode))
 
 
-    def allNodesDependingOnNode(self, dependingOnNode, recursion=True):
+    def all_nodes_depending_on_node(self, dependingOnNode, recursion=True):
         """
         This returns a list of all nodes recursively downstream that rely on the given node's
         output.  Can be nicely used to set a "dirty" flag on downstream nodes.
         """
         # All the nodes that rely on this node, indirectly or directly
         directlyNeedyNodeList = list()
-        for dagNode in self.allNodesAfter(dependingOnNode):
+        for dagNode in self.all_nodes_after(dependingOnNode):
             depends = self.orderedNodeDependenciesAt(dagNode, includeGivenNode=False, onlyUnfulfilled=False, recursion=recursion)
             if dependingOnNode in depends:
                 directlyNeedyNodeList.append(dagNode)
@@ -319,7 +320,7 @@ class DAG(object):
         which dagNode and corresponding input is connected to the output.
         """
         connectedTuples = list()
-        dependentNodes = self.allNodesDependingOnNode(dagNode, recursion=False)
+        dependentNodes = self.all_nodes_depending_on_node(dagNode, recursion=False)
         for dNode in dependentNodes:
             for input in dNode.inputs():
                 (outNode, nodeOutput) = self.nodeInputComesFromNode(dNode, input)
@@ -355,14 +356,6 @@ class DAG(object):
     ###########################################################################
     ## Helpers
     ###########################################################################
-    def nodeAllInputsDataPresent(self, dagNode):
-        """
-        Returns a boolean stating whether this node's required inputs have data on disk.
-        """
-        foo = self.nodeOrderedDataPackets(dagNode, onlyFulfilled=True)
-        return dagNode.input_requirements_fulfilled(foo)
-    
-    
     def nodeAllInputsConnected(self, dagNode):
         """
         Returns a boolean stating whether this node has all of its required inputs connected.
@@ -452,27 +445,6 @@ class DAG(object):
             if dagNode in self.nodeGroupDict[key]:
                 return key
         return None
-        
-
-    def groupIndicesInExecutionList(self, groupNodeList, executionList):
-        """
-        Given a list of nodes to be executed (executionList), return the 
-        indices in this list that the nodes in the given (groupNodeList) list
-        occupy in the executionList.
-        """
-        endIndex = None
-        startIndex = None
-        tracking = False
-        groupNodeSet = set(groupNodeList)
-        for i in range(len(executionList)):
-            if not tracking and executionList[i] in groupNodeSet:
-                startIndex = i
-                tracking = True
-            if tracking and executionList[i] not in groupNodeSet:
-                endIndex = i-1
-                tracking = False
-                break
-        return (startIndex, endIndex)
 
 
     ###########################################################################
