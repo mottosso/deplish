@@ -855,7 +855,7 @@ class GraphicsViewWidget(QtGui.QGraphicsView):
         self.setScene(scene)
         
         # Mouse Interaction
-        self.setCacheMode(QtGui.QGraphicsView.CacheBackground)
+        #self.setCacheMode(QtGui.QGraphicsView.CacheBackground)
         self.setRenderHint(QtGui.QPainter.Antialiasing)
         self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
@@ -864,6 +864,12 @@ class GraphicsViewWidget(QtGui.QGraphicsView):
         # Hide the scroll bars
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+
+
+
+        brush = QtGui.QBrush(QtGui.QColor(0, 255, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        self.setBackgroundBrush(brush)
 
         # Window properties
         self.setWindowTitle(self.tr("Depends"))
@@ -1027,9 +1033,29 @@ class GraphicsViewWidget(QtGui.QGraphicsView):
         """
         Filling.
         """
-        sceneRect = self.sceneRect()
-        painter.fillRect(rect.intersect(sceneRect), QtGui.QBrush(QtCore.Qt.black, QtCore.Qt.SolidPattern))
-        painter.drawRect(sceneRect)
+        #sceneRect = self.sceneRect()
+        ##painter.fillRect(rect.intersect(sceneRect), QtGui.QBrush(QtCore.Qt.black, QtCore.Qt.SolidPattern))
+        #painter.drawRect(sceneRect)
+
+        # Draw grid
+        gridSize = 25
+        left = int(rect.left()) - (int(rect.left()) % gridSize)
+        top = int(rect.top()) - (int(rect.top()) % gridSize)
+
+        lines = []
+
+        for x in xrange(left, int(rect.right())+1, gridSize):
+            lines.append(QtCore.QLineF(x, rect.top(), x, rect.bottom()))
+
+        for y in xrange(top, int(rect.bottom())+1, gridSize):
+            lines.append(QtCore.QLineF(rect.left(), y, rect.right(), y))
+
+        p = QtGui.QPen()
+        p.setWidth(0.0)
+        p.setColor(QtGui.QColor(255, 255, 255, 25))
+        painter.setPen(p)
+        painter.drawLines(lines)
+
 
 
     def scaleView(self, scaleFactor):

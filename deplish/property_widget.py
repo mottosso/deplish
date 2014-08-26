@@ -52,7 +52,7 @@ class GeneralEdit(QtGui.QWidget):
         self.lineEdit = QtGui.QLineEdit(self)
         self.lineEdit.setMinimumWidth(150)
         self.lineEdit.setFixedHeight(25)
-        self.lineEdit.setAlignment(QtCore.Qt.AlignRight)
+        self.lineEdit.setAlignment(QtCore.Qt.AlignLeft)
         self.lineEdit.setEnabled(enabled)
         self.setValue(value)
 
