@@ -115,8 +115,8 @@ class MainWindow(QtGui.QMainWindow):
         editMenu.addAction(QtGui.QAction("&Group Nodes", self, shortcut="Ctrl+G", triggered=self.groupSelectedNodes))
         editMenu.addAction(QtGui.QAction("&Ungroup Nodes", self, shortcut="Ctrl+Shift+G", triggered=self.ungroupSelectedNodes))
         executeMenu = self.menuBar().addMenu("E&xecute")
-        executeMenu.addAction(QtGui.QAction("&Execute Graph", self, shortcut= "Ctrl+E", triggered=self.executeSelected))
-        executeMenu.addAction(QtGui.QAction("Execute &Selected Node", self, shortcut= "Ctrl+Shift+E", triggered=lambda: self.executeSelected(executeImmediately=True)))
+        executeMenu.addAction(QtGui.QAction("&Execute Graph", self, shortcut= "Ctrl+E", triggered=lambda: self.dag.execute_graph()))
+        executeMenu.addAction(QtGui.QAction("Execute Up To &Selected Node", self, shortcut= "Ctrl+Shift+E", triggered=lambda: self.executeSelected(executeImmediately=True)))
         executeMenu.addSeparator()
         executeMenu.addAction(QtGui.QAction("Version &Up outputs", self, shortcut= "Ctrl+U", triggered=self.versionUpSelectedOutputFilenames))
         executeMenu.addSeparator()
@@ -134,7 +134,6 @@ class MainWindow(QtGui.QMainWindow):
         self.setupStartupVariables()
         node.loadChildNodesFromPaths(variables.value('NODE_PATH').split(':'))
         file_dialog.loadChildFileDialogsFromPaths(variables.value('FILE_DIALOG_PATH').split(':'))
-        node.generateReadDagNodes()
 
         # Generate the Create menu.  Must be done after plugins are loaded.
         for action in self.createCreateMenuActions():
@@ -274,7 +273,7 @@ class MainWindow(QtGui.QMainWindow):
         newDagNode = nodeType()
         nodeName = node.cleanNodeName(newDagNode.typeStr())
         nodeName = self.dag.safeNodeName(nodeName)
-        newDagNode.setName(nodeName)
+        newDagNode.set_name(nodeName)
         self.dag.add_node(newDagNode)
         self.graphicsScene.addExistingDagNode(newDagNode, nodeLocation)
 
@@ -443,7 +442,7 @@ class MainWindow(QtGui.QMainWindow):
         nodesAffected = list()
         if propName == "Name" and propertyType is node.DagNodeAttribute:
             if newValue != dagNode.name:
-                dagNode.setName(newValue)
+                dagNode.set_name(newValue)
                 nodesAffected = nodesAffected + [dagNode]
                 somethingChanged = True
         else:
@@ -462,8 +461,8 @@ class MainWindow(QtGui.QMainWindow):
                     somethingChanged = True
                 
             elif propertyType is node.DagNodeAttribute:
-                if newValue != dagNode.attributeValue(propName):
-                    dagNode.setAttributeValue(propName, newValue)
+                if newValue != dagNode.attribute_value(propName):
+                    dagNode.set_attribute_value(propName, newValue)
                     nodesAffected = nodesAffected + [dagNode]
                     somethingChanged = True
 
@@ -511,8 +510,8 @@ class MainWindow(QtGui.QMainWindow):
                 registerUndo = True
                 
         elif propertyType is node.DagNodeAttribute:
-            if newRange != dagNode.attributeRange(propName, variableSubstitution=False):
-                dagNode.setAttributeRange(propName, newRange)
+            if newRange != dagNode.attribute_range(propName, variableSubstitution=False):
+                dagNode.set_attribute_range(propName, newRange)
                 nodesAffected = nodesAffected + [dagNode]
 
         # Undos aren't registered when the value doesn't actually change, 
@@ -676,12 +675,12 @@ class MainWindow(QtGui.QMainWindow):
             singleDollarList += vps[0] + vss[0] + vss2[0]
             doubleDollarList += vps[1] + vss[1] + vss2[1]
         for attribute in dagNode.attributes():
-            vps = variables.present(dagNode.attributeValue(attribute.name, variableSubstitution=False))
+            vps = variables.present(dagNode.attribute_value(attribute.name, variableSubstitution=False))
             vss = (list(), list())
             vss2 = (list(), list())
-            if dagNode.attributeRange(attribute.name, variableSubstitution=False):
-                vss = variables.present(dagNode.attributeRange(attribute.name, variableSubstitution=False)[0])
-                vss2 = variables.present(dagNode.attributeRange(attribute.name, variableSubstitution=False)[1])
+            if dagNode.attribute_range(attribute.name, variableSubstitution=False):
+                vss = variables.present(dagNode.attribute_range(attribute.name, variableSubstitution=False)[0])
+                vss2 = variables.present(dagNode.attribute_range(attribute.name, variableSubstitution=False)[1])
             singleDollarList += vps[0] + vss[0] + vss2[0]
             doubleDollarList += vps[1] + vss[1] + vss2[1]
         for output in dagNode.outputs():
@@ -745,19 +744,6 @@ class MainWindow(QtGui.QMainWindow):
                     raise RuntimeError("Input range of node '%s' input '%s' extends beyond the bounds of output from node '%s' output '%s'" % 
                                        (dagNode.name, input.name, outputNode.name, output.name))
             
-            # Insure the number of input frames match the number of output frames for nodes that are embarassingly parallel.
-            # NOTE: This one can go away someday after careful thought - this restriction exists, at the moment, for simplicity's sake.
-            if dagNode.isEmbarrassinglyParallel():            # and self.dag.nodeGroupCount(dagNode) > 0:
-                for input in dagNode.inputs():
-                    if not input.seqRange:
-                        continue
-                    inputRange = (int(input.seqRange[0]), int(input.seqRange[1]))
-                    outputRangePreSubstitution = dagNode.outputAffectedByInput(input).getSeqRange()
-                    outputRange = (int(outputRangePreSubstitution[0]), int(outputRangePreSubstitution[1]))
-                    if inputRange != outputRange:
-                        raise RuntimeError("The parallel node, '%s', that lives in group '%s' is trimming its inputs a bit.  This is currently a no-no" %
-                                           (dagNode.name, self.dag.nodeInGroupNamed(dagNode)))
-            
             # Insure all your outputs are filled-in
             # Insure output paths exist (most nodes don't create paths if they aren't present)
             # Insure the output paths can be written to
@@ -793,11 +779,6 @@ class MainWindow(QtGui.QMainWindow):
         #
         # Node group validation
         #
-        # Insure all nodes in each node group are embarrassingly parallel
-        for groupName in self.dag.nodeGroupDict:
-            for dagNode in self.dag.nodeGroupDict[groupName]:
-                if not dagNode.isEmbarrassinglyParallel():
-                    raise RuntimeError("Node '%s' in group '%s' is not embarrassingly parallel." % (dagNode.name, groupName))
         
         # Insure all input and output ranges are identical in each dag group
         # NOTE: This check can be removed with some careful thought and changes in the execution engine.
@@ -816,44 +797,6 @@ class MainWindow(QtGui.QMainWindow):
             if self.dag.nodeGroupCount(dagNode) > 1:
                 raise RuntimeError("Node '%s' is present in multiple groups." % (dagNode.name))
 
-
-    def dagExecuteNode(self, dagNode):
-        """Evaluate the given node in the graph"""
-        # TODO: 'Publish': this is where most changes must still occur. Since here the behaviour differs a lot from
-        #       'Depends'. We should somehow create a Context that passes on to the nodes in the graph (and keep in
-        #       account the branching that can occur in the graph!)
-
-        # Convert this ordered list into an execution recipe and give it to a plugin that knows what to do with it.
-        orderedDependencies = self.dag.orderedNodeDependenciesAt(dagNode)
-        try:
-            self.dagNodesSanityCheck(orderedDependencies)
-        except Exception, err:
-            print err
-            print "Aborting Dag execution."
-            return
-
-        # TODO: 'Publish' - We likely don't need to store in an execution list first, but can directly traverse the
-        #       graph while executing each node as we pass it and pass on the data/outputs required.
-        #       For now I have commented out all lines corresponding with 'executionList'
-        #executionList = list()
-        for dagNode in orderedDependencies:
-            # A dictionary with key=input & data=datapacket
-            dataPacketDict = dict(self.dag.nodeOrderedDataPackets(dagNode))
-            
-            # Pre-execution hook
-            preCommandList = dagNode.preProcess()
-            #if preCommandList:
-            #    executionList.append((dagNode.name + " [Pre-execution]", preCommandList))
-
-            # Command execution
-            commandList = dagNode.execute()
-            #executionList.append((dagNode.name, commandList))
-            
-            # Post-execution hook
-            postCommandList = dagNode.postProcess()
-            #if postCommandList:
-            #    executionList.append((dagNode.name + " [Post-execution]", postCommandList))
-        
 
     ###########################################################################
     ## Menu operations
@@ -1009,13 +952,14 @@ class MainWindow(QtGui.QMainWindow):
     
     def executeSelected(self, executeImmediately=False):
         """
-        Execute the selected node using self.dagExecuteNode().
+        Execute the selected node using self.dag.execute_up_to_node().
         """
         selectedDagNodes = self.selectedDagNodes()
         if len(selectedDagNodes) > 1 or not selectedDagNodes:
-            # TODO: Status bar
+            # TODO: Status bar warning/message
             return
-        self.dagExecuteNode(selectedDagNodes[0])
+
+        self.dag.execute_up_to_node(selectedDagNodes[0])
 
 
     def deleteSelectedNodes(self):

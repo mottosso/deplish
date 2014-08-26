@@ -260,7 +260,7 @@ Core Completed
 [X] Changing an input file way upstream should, at the very least, let people know which fields downstream are "stale".
 [X] Passing a lightprobe into an ImageTransform node converts the results into an Image data packet.  
 	  Should I try to preserve things I know about?  Scenegraphhandle will have to get a list of dataPackets to check against if so.
-	  Seems pretty necessary since sceneGraphHandle in DagNodeImageTransform will pass transforms on if it sees an incoming Lightprobe & not for an incoming image.
+	  Seems pretty necessary since scene_graph_handle in DagNodeImageTransform will pass transforms on if it sees an incoming Lightprobe & not for an incoming image.
 [X]   I've implemented this, but it's a hack right now - finalize.
 [X] Convert the %, @, and # check in data packet into framespec talk.
 [X] If ImageTransform can take either lightprobes or images, it should be able to save either/or as well.  
@@ -268,7 +268,7 @@ Core Completed
     Or maybe just merge in a transform with a different node.
 [X] Fix display of nodes at the top of the hierarchy when doing light/dark drawing.  This really needs a function...
 [X] Very likely need a dataPacketsRequired function in DagNode to cross check against dataPacketsAccepted when validating.
-[X] DataPacketTypesAccepted in the core can migrate down to the	inputRequirementsFulfilled section and that can live in the parent class.
+[X] DataPacketTypesAccepted in the core can migrate down to the	input_requirements_fulfilled section and that can live in the parent class.
 [X] Inheritance in the datapackets (lightprobes are subsets of images, etc).  Which contexts does this help in again?
 [X] Dag functions 'connectionsIn/Out' doesn't need to return full edge objects - just nodes, methinks
 [X] SubDags for nodes.

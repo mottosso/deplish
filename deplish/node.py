@@ -45,124 +45,6 @@ def cleanNodeName(name):
 
 
 ###############################################################################
-## Input/Output/Attribute classes
-###############################################################################
-# NOTE : If these get many more attributes, they may very well need to get their
-#        own dicts of values, ranges, etc.
-# NOTE : Sequence ranges are tuples containing two strings, the start and the end.
-#
-
-class DagNodeInput(object):
-    """
-    An input property of a DagNode.  Contains the datapacket type is accepts,
-    a flag denoting if it's required or not, a name, and documentation.
-    """
-
-    def __init__(self, name, dataPacketType, required, docString=None):
-        """
-        """
-        self.name = name
-        self.value = ""
-        self.seqRange = None
-        self.docString = docString
-        
-        # Constants, not written to disk
-        self.dataPacketType = dataPacketType
-        self.required = required
-    
-    
-    def allPossibleInputTypes(self):
-        """
-        Return a list of all possible DataPacket types this input accepts.
-        This is interesting because inputs can accept DataPakcets of a type
-        that is inherited from its base type.
-        """
-        inputTypeList = set([self.dataPacketType])
-        inputTypeList |= set(util.allClassChildren(self.dataPacketType))
-        return inputTypeList
-        
-
-    # TODO: Should my dictionary keys be more interesting?
-    def __hash__(self):
-        return hash(self.name)
-    def __eq__(self, other):
-        return (self.name) == (other.name)
-
-
-###############################################################################
-###############################################################################
-class DagNodeOutput(object):
-    """
-    An output property of a DagNode.  Contains its data packet type, a doc
-    string, a name, and potentially a string containing a custom file dialog
-    that pops open when a button is pressed.  Each sub-output in a given output
-    must contain the exact number of files as the rest of the sub-outputs, thus
-    a single sequence range is present for an entire output.
-    """
-    
-    def __init__(self, name, dataPacketType, docString=None, customFileDialogName=None):
-        """
-        """
-        self.name = name
-        self.value = dict()
-        self.seqRange = None
-        self.docString = docString
-        self.customFileDialogName = customFileDialogName
-
-        # Constants, not written to disk
-        self.dataPacketType = dataPacketType
-
-        # Note: We add the largest possible set of attributes this node can have from 
-        #       its datapacket and all the datapacket's children types
-        allPossibleFileDescriptorNames = set()
-        for tipe in self.allPossibleOutputTypes():
-            for fdName in data_packet.filenameDictForDataPacketType(tipe):
-                allPossibleFileDescriptorNames.add(fdName)
-        for fdName in allPossibleFileDescriptorNames:
-            self.value[fdName] = ""
-            self.seqRange = None
-
-
-    def allPossibleOutputTypes(self):
-        """
-        Returns a list of all type data packet types this node can output.
-        """
-        outputTypeList = set([self.dataPacketType])
-        outputTypeList |= set(util.allClassChildren(self.dataPacketType))
-        return outputTypeList
-
-
-    def subOutputNames(self):
-        """
-        Return a list of the names of each of this output's data packet sub-types.
-        """
-        subList = list()
-        for subName in self.value:
-            subList.append(subName)
-        return subList
-
-
-    def getSeqRange(self):
-        """
-        Gets the single sequence range for this output.
-        """
-        if not self.seqRange:
-            return None
-        if self.seqRange[0] is None or self.seqRange[1] is None:
-            return None
-        if self.seqRange[0] == "" or self.seqRange[1] == "":
-            return None
-        return self.seqRange
-        
-
-    # TODO: Should my dictionary keys be more interesting?
-    def __hash__(self):
-        return hash(self.name)
-    def __eq__(self, other):
-        return (self.name) == (other.name)
-
-
-###############################################################################
 ###############################################################################
 class DagNodeAttribute(object):
     """
@@ -180,6 +62,10 @@ class DagNodeAttribute(object):
         self.seqRange = None
         self.docString = docString
         self.customFileDialogName = customFileDialogName
+
+        # TODO: Implement usage of attribute as input and/or output (connect in graph)
+        self.input = False
+        self.output = False
 
         # Constants, not written to disk
         self.isFileType = isFileType
@@ -210,7 +96,7 @@ class DagNode(object):
     def __init__(self, name="", nUUID=None):
         """
         """
-        self.setName(name)
+        self.set_name(name)
         self._properties = dict()
         self.uuid = nUUID if nUUID else uuid.uuid4()
         
@@ -284,60 +170,26 @@ class DagNode(object):
     ###########################################################################
     def inputs(self):
         """
+            Return a list of all attributes that behave as outputs
+        """
+        return [attr for attr in self.attributes() if attr.input]
+
+    def in_connections(self, connections=True):
+        """
         Return a list of all input objects.
         """
-        inputList = list()
-        for x in self._properties:
-            if type(self._properties[x]) is DagNodeInput:
-                inputList.append(self._properties[x])
-        return inputList
+        result = []
+        for attr in self.input_attrs():
+            connected = attr.input()
+            if not connected:
+                continue
 
+            if connections:
+                result.append((attr, connected))
+            else:
+                result.append(connected)
 
-    def setInputValue(self, inputName, value):
-        """
-        Set an input named the given name to the given string.
-        """
-        self.inputNamed(inputName).value = value
-
-
-    def setInputRange(self, inputName, newRange):
-        """
-        Set the range of an input named the given name to the given range 
-        tuple (string, string).
-        """
-        self.inputNamed(inputName).seqRange = newRange
-
-
-    def inputNamed(self, inputName):
-        """
-        Return an input object for the given name.
-        """
-        fullInputName = self._inputNameInPropertyDict(inputName)
-        if fullInputName not in self._properties:
-            raise RuntimeError('Input %s does not exist in node %s.' % (inputName, self.name))
-        return self._properties[fullInputName]
-    
-
-    def inputValue(self, inputName, variableSubstitution=True):
-        """
-        Return a value string for the given input name.  Workflow variables are
-        substituted by default.
-        """
-        value = self.inputNamed(inputName).value
-        if variableSubstitution:
-            value = variables.substitute(value)
-        return value
-        
-    
-    def inputRange(self, inputName, variableSubstitution=True):
-        """
-        Return a range tuple (string, string) for the given input name.  Workflow
-        variables are substituted by default.
-        """
-        seqRange = self.inputNamed(inputName).seqRange
-        if seqRange and seqRange[0] and seqRange[1] and variableSubstitution:
-            seqRange = (variables.substitute(seqRange[0]), variables.substitute(seqRange[1]))
-        return seqRange
+        return result
 
     
     ###########################################################################
@@ -345,71 +197,31 @@ class DagNode(object):
     ###########################################################################
     def outputs(self):
         """
-        Return a list of all output objects.
+            Return a list of all attributes that behave as outputs
         """
-        outputList = list()
-        for x in self._properties:
-            if type(self._properties[x]) is DagNodeOutput:
-                outputList.append(self._properties[x])
-        return outputList
+        return [attr for attr in self.attributes() if attr.output]
 
+    def out_connections(self, connections=True):
+        """
+        Return a list of all connected outputs.
 
-    def setOutputValue(self, outputName, subOutputName, value):
-        """
-        Set an output named the given name to the given string.
-        """
-        self.outputNamed(outputName).value[subOutputName] = value
+        If connections is True return both the output attribute and it's connection else only return the connected
+        attribute.
 
+        """
+        result = []
+        for attr in self.output_attrs():
+            connected = attr.output()
+            if not connected:
+                continue
 
-    def setOutputRange(self, outputName, newRange):
-        """
-        Set the range of an output named the given name to the given range 
-        tuple (string, string).
-        """
-        self.outputNamed(outputName).seqRange = newRange
+            if connections:
+                result.append((attr, connected))
+            else:
+                result.append(connected)
 
+        return result
 
-    def outputNamed(self, outputName):
-        """
-        Return an output object for the given name.
-        """
-        fullOutputName = self._outputNameInPropertyDict(outputName)
-        if fullOutputName not in self._properties:
-            raise RuntimeError('Output %s does not exist in node %s.' % (outputName, self.name))
-        return self._properties[fullOutputName]
-    
-    
-    def outputValue(self, outputName, subOutputName, variableSubstitution=True):
-        """
-        Return a value string for the given output name and sub-name.  Workflow
-        variables are substituted by default.
-        """
-        value = self.outputNamed(outputName).value[subOutputName]
-        if variableSubstitution:
-            value = variables.substitute(value)
-        return value
-
-
-    def outputRange(self, outputName, variableSubstitution=True):
-        """
-        Return a range tuple (string, string) for the given output name.  
-        Workflow variables are substituted by default.
-        """
-        seqRange = self.outputNamed(outputName).seqRange
-        if seqRange and seqRange[0] and seqRange[1] and variableSubstitution:
-            seqRange = (variables.substitute(seqRange[0]), variables.substitute(seqRange[1]))
-        return seqRange
-
-
-    def outputFramespec(self, outputName, subOutputName):
-        """
-        Return a framespec object for the given output name and sub-name.
-        Workflow variables are always substituted in this function.
-        """
-        filename = self.outputValue(outputName, subOutputName)
-        seqRange = self.outputRange(outputName)
-        return util.framespec(filename, seqRange)
-    
 
     ###########################################################################
     ## Attribute functions
@@ -425,22 +237,22 @@ class DagNode(object):
         return attributeList
 
 
-    def setAttributeValue(self, attrName, value):
+    def set_attribute_value(self, attrName, value):
         """
         Set an attribute named the given name to the given string.
         """
-        self.attributeNamed(attrName).value = value
+        self.attribute_named(attrName).value = value
 
 
-    def setAttributeRange(self, attrName, newRange):
+    def set_attribute_range(self, attrName, newRange):
         """
         Set the range of an attribute named the given name to the given range
         tuple (string, string).
         """
-        self.attributeNamed(attrName).seqRange = newRange
+        self.attribute_named(attrName).seqRange = newRange
 
 
-    def attributeNamed(self, attrName):
+    def attribute_named(self, attrName):
         """
         Return an attribute object for the given name.
         """
@@ -449,23 +261,23 @@ class DagNode(object):
         return self._properties[attrName]
 
 
-    def attributeValue(self, attrName, variableSubstitution=True):
+    def attribute_value(self, attrName, variableSubstitution=True):
         """
         Return a value string for the given attribute name.  Workflow variables
         are substituted by default.
         """
-        value = self.attributeNamed(attrName).value
+        value = self.attribute_named(attrName).value
         if variableSubstitution:
             value = variables.substitute(value)
         return value
 
 
-    def attributeRange(self, attrName, variableSubstitution=True):
+    def attribute_range(self, attrName, variableSubstitution=True):
         """
         Return a range tuple (string, string) for the given attribute name.  
         Workflow variables are substituted by default.
         """
-        seqRange = self.attributeNamed(attrName).seqRange
+        seqRange = self.attribute_named(attrName).seqRange
         if variableSubstitution:
             seqRange = (variables.substitute(seqRange[0]), variables.substitute(seqRange[1]))
         return seqRange
@@ -487,7 +299,7 @@ class DagNode(object):
         return re.sub(r'(?!^)([A-Z]+)', r' \1', type(self).__name__[len('DagNode'):])
     
     
-    def setName(self, name):
+    def set_name(self, name):
         """
         Set the name value, converting all special characters (and spaces) into
         underscores.
@@ -508,20 +320,9 @@ class DagNode(object):
             fullOutputName = self._outputNameInPropertyDict(output.name)
             dupe._properties[fullOutputName] = copy.deepcopy(output)
         return dupe
-        
 
-    def dataPacketTypesAccepted(self):
-        """
-        Return a list of DataPacket types this node can find useful as inputs.
-        Includes all input types and their child types.
-        """
-        acceptedTypes = set()
-        for input in self.inputs():
-            acceptedTypes.update(input.allPossibleInputTypes())
-        return list(acceptedTypes)
-    
 
-    def inputRequirementsFulfilled(self, dataPackets):
+    def input_requirements_fulfilled(self, dataPackets):
         """
         Determine if all the data necessary to run is present.
         """
@@ -529,7 +330,7 @@ class DagNode(object):
         return set(self.inputs()).issubset(set(dpInputs))
 
 
-    def sceneGraphHandle(self, specializationDict=None):
+    def scene_graph_handle(self, specializationDict=None):
         """
         Handle this node in the context of the dependency engine scene graph.
         If the output is specialized to an inherited type, pass a dictionary
@@ -555,30 +356,6 @@ class DagNode(object):
                 newDataPacket.setSequenceRange(self.outputRange(output.name, fdName))
             dpList.append(newDataPacket)
         return dpList
-
-
-    def inputAffectingOutput(self, output):
-        """
-        Returns the one input that affects the given output.
-        """
-        # TODO: Is this really a singular thing?
-        # TODO: Guessing is a bit too implicit for my tastes!
-        for input in self.inputs():
-            if input.dataPacketType == output.dataPacketType:
-                return input
-        return None
-        
-        
-    def outputAffectedByInput(self, input):
-        """
-        Returns the output that is affected by the given input.
-        """
-        # TODO: Is this really a singular thing?
-        # TODO: Guessing is a bit too implicit for my tastes!
-        for output in self.outputs():
-            if output.dataPacketType == input.dataPacketType:
-                return output
-        return None
         
 
     ###########################################################################
@@ -651,77 +428,6 @@ class DagNode(object):
         valid alarm.
         """
         return True
-    
-    
-    def isEmbarrassinglyParallel(self):
-        """
-        Nodes that can process each input independently of the other inputs can
-        overload this function and return True.  This gives the execution engine
-        a hint that a single node or entire groups of nodes' can be parallelized.
-        """
-        return False
-        
-
-###############################################################################
-## Read node generation
-###############################################################################
-def readNodeClassFactory(dataPacketType):
-    """
-    Create a new DagNode...Read node from a given dataPacket type.
-    """
-    dataType = dataPacketType.__name__[len("DataPacket"):]
-    NewClassType = type('DagNode'+dataType+'Read', (DagNode,), {})
-
-    # Create the new DagNode's init function
-    def init(self, name=""):
-        DagNode.__init__(self, name)
-    NewClassType.__init__ = init
-    
-    # Create the new DagNode's defineInputs function
-    def _defineInputs(self):
-        return list()
-    NewClassType._defineInputs = _defineInputs
-    
-    # Create the new DagNode's defineOutputs function
-    def _defineOutputs(self):
-        return [DagNodeOutput(dataPacketType.__name__[len('DataPacket'):], dataPacketType)]
-    NewClassType._defineOutputs = _defineOutputs
-    
-    # Create the new DagNode's defineAttributes function
-    def _defineAttributes(self):
-        return list()
-    NewClassType._defineAttributes = _defineAttributes
-    
-    # Create the executeList function
-    def executeList(self, dataPacketDict, splitOperations=False):
-        pass
-    NewClassType.executeList = executeList
-
-    # Create the validate function
-    def validate(self):
-        # Calling sceneGraphHandle without a specialized type works because we are just
-        # checking the presence of data; not whether its type matches or anything else fancy.
-        for output in self.outputs():
-            if not self.sceneGraphHandle()[0].dataPresent(): # TODO: sceneGraphHandle should not return an array (see other yadda yaddas)
-                raise RuntimeError("Data is not present for %s output." % output.name)
-        return True
-    NewClassType.validate = validate
-
-    return NewClassType
-
-
-######################### GENERATE READ DAG NODES #############################
-def generateReadDagNodes():
-    """
-    Construct a collection of dag nodes for each type of data packet loaded in
-    the current session.
-    """
-    for packetType in util.allClassChildren(data_packet.DataPacket):
-        # Create a new class based on all child objects of DataPacket
-        NewClassType = readNodeClassFactory(packetType)
-        # Install class into current module
-        globals()[NewClassType.__name__] = NewClassType
-        del NewClassType
 
 
 ############ FUNCTION TO IMPORT PLUGIN NODES INTO THIS NAMESPACE  #############

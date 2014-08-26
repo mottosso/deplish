@@ -142,10 +142,48 @@ class DAG(object):
         for dagNode in nodeEvalOrder:
             # Retrieve specialized output types
             specializationDict = dict()
-            for output in dagNode.outputs():
-                specializationDict[output.name] = self.nodeOutputType(dagNode, output)
-            dagPathList.extend(dagNode.sceneGraphHandle(specializationDict))
+            #for output in dagNode.outputs():
+            #    specializationDict[output.name] = self.nodeOutputType(dagNode, output)
+            dagPathList.extend(dagNode.scene_graph_handle(specializationDict))
         return dagPathList
+
+
+    def execute_node(self, node, contexts=None):
+        """ Executes a single node with the given list of contexts  """
+        print 'EXECUTING NODE::', node.name
+
+        node.preProcess()
+        data = node.execute()
+        node.postProcess()
+
+        return data
+
+    def execute_up_to_node(self, node):
+        """
+            Execute everything required for and up to the given node and not beyond.
+        """
+        parents = self.network.successors(node)
+        nodes = parents + [node]
+        sub_graph_eval = networkx.topological_sort(self.network, nodes, reverse=True)
+
+        self.execute_graph(node_eval=sub_graph_eval)
+
+
+    def execute_graph(self, node_eval=None):
+        """
+            Executes the full graph in order or the nodes given by `node_eval` in the order of the input.
+
+            Note: it is recommended to ensure `node_eval` is topologically sorted (in reverse).
+        """
+        # Get dag processing order
+        if node_eval is None:
+            node_eval = networkx.dfs_postorder_nodes(self.network)
+
+        # TODO: Wherever the graph starts a new empty Context must be created (or possibly predefined?)
+        # TODO: When graph branches a copy must be made of the Context so each branch operates on its own Context.
+        # Execute each node
+        for node in node_eval:
+            self.execute_node(node)
 
 
     def nodeOrderedDataPackets(self, dagNode, onlyUnfulfilled=False, onlyFulfilled=False):
@@ -310,8 +348,8 @@ class DAG(object):
         specializationDict = dict()
         for output in dagNode.outputs():
             specializationDict[output.name] = self.nodeOutputType(dagNode, output)
-        # TODO: sceneGraphHandle should not return an array - it should take a single output.
-        return dagNode.sceneGraphHandle(specializationDict)[0]
+        # TODO: scene_graph_handle should not return an array - it should take a single output.
+        return dagNode.scene_graph_handle(specializationDict)[0]
 
 
     ###########################################################################
@@ -322,7 +360,7 @@ class DAG(object):
         Returns a boolean stating whether this node's required inputs have data on disk.
         """
         foo = self.nodeOrderedDataPackets(dagNode, onlyFulfilled=True)
-        return dagNode.inputRequirementsFulfilled(foo)
+        return dagNode.input_requirements_fulfilled(foo)
     
     
     def nodeAllInputsConnected(self, dagNode):
@@ -330,7 +368,7 @@ class DAG(object):
         Returns a boolean stating whether this node has all of its required inputs connected.
         """
         foo = self.nodeOrderedDataPackets(dagNode)
-        return dagNode.inputRequirementsFulfilled(foo)
+        return dagNode.input_requirements_fulfilled(foo)
     
     
     def safeNodeName(self, nodeName):
@@ -495,8 +533,8 @@ class DAG(object):
                     if o["RANGE"]:
                         newNode.setOutputRange(o["NAME"], (o["RANGE"][0], o["RANGE"][1]))
             for a in n["ATTRIBUTES"]:
-                newNode.setAttributeValue(a["NAME"], a["VALUE"])
-                newNode.setAttributeRange(a["NAME"], a["RANGE"])
+                newNode.set_attribute_value(a["NAME"], a["VALUE"])
+                newNode.set_attribute_range(a["NAME"], a["RANGE"])
             self.add_node(newNode)
             
         # Edge loads

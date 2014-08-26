@@ -211,7 +211,8 @@ class DrawNode(QtGui.QGraphicsItem):
         unselected, is currently executable, and its name.  Also draws a 
         little light denoting if it already has data present.
         """
-        inputsFulfilled = self.scene().dag.nodeAllInputsDataPresent(self.dagNode)
+        #inputsFulfilled = self.scene().dag.nodeAllInputsDataPresent(self.dagNode)
+        inputsFulfilled = False
         
         # Draw the box
         gradient = QtGui.QLinearGradient(0, -self.height/2, 0, self.height/2)
@@ -243,15 +244,15 @@ class DrawNode(QtGui.QGraphicsItem):
             return
 
         # The "data present" light
-        painter.setPen(QtGui.QPen(QtGui.QColor(0, 0, 0), 0.25))
-        for output in self.dagNode.outputs():
-            if self.scene().dag.nodeOutputDataPacket(self.dagNode, output).dataPresent():
-                painter.setBrush(QtGui.QBrush(QtGui.QColor(0, 255, 0)))
-            else:
-                painter.setBrush(QtGui.QBrush(QtGui.QColor(255, 0, 0)))
-                break
-
-        painter.drawRect(QtCore.QRectF(-self.width/2+5, -self.height/2+5, 5, 5))
+        # painter.setPen(QtGui.QPen(QtGui.QColor(0, 0, 0), 0.25))
+        # for output in self.dagNode.outputs():
+        #     if self.scene().dag.nodeOutputDataPacket(self.dagNode, output).dataPresent():
+        #         painter.setBrush(QtGui.QBrush(QtGui.QColor(0, 255, 0)))
+        #     else:
+        #         painter.setBrush(QtGui.QBrush(QtGui.QColor(255, 0, 0)))
+        #         break
+        #
+        # painter.drawRect(QtCore.QRectF(-self.width/2+5, -self.height/2+5, 5, 5))
 
         # Text (none for dot nodes)
         textRect = QtCore.QRectF(self.boundingRect().left() + 4,  self.boundingRect().top(),
@@ -1055,7 +1056,6 @@ class GraphicsViewWidget(QtGui.QGraphicsView):
         p.setColor(QtGui.QColor(255, 255, 255, 25))
         painter.setPen(p)
         painter.drawLines(lines)
-
 
 
     def scaleView(self, scaleFactor):
