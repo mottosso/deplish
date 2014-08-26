@@ -381,7 +381,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Updates the drawNodes for each of the affected dagNodes
         self.propWidget.refresh()
-        self.graphicsScene.refreshDrawNodes()
+        self.graphicsScene.refreshDrawNodes([dupedNode])
 
 
     def nodesDisconnected(self, fromDagNode, toDagNode):
