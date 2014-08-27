@@ -441,6 +441,113 @@ def loadChildNodesFromPaths(pathList):
         for nc in nodeClassDict:
             globals()[nc] = nodeClassDict[nc]
 
+class DagNodeInput(object):
+    """
+    An input property of a DagNode.  Contains the datapacket type is accepts,
+    a flag denoting if it's required or not, a name, and documentation.
+    """
+
+    def __init__(self, name, dataPacketType, required, docString=None):
+        """
+        """
+        self.name = name
+        self.value = ""
+        self.seqRange = None
+        self.docString = docString
+        
+        # Constants, not written to disk
+        self.dataPacketType = dataPacketType
+        self.required = required
+    
+    
+    def allPossibleInputTypes(self):
+        """
+        Return a list of all possible DataPacket types this input accepts.
+        This is interesting because inputs can accept DataPakcets of a type
+        that is inherited from its base type.
+        """
+        inputTypeList = set([self.dataPacketType])
+        inputTypeList |= set(util.allClassChildren(self.dataPacketType))
+        return inputTypeList
+        
+
+    # TODO: Should my dictionary keys be more interesting?
+    def __hash__(self):
+        return hash(self.name)
+    def __eq__(self, other):
+        return (self.name) == (other.name)
+
+
+class DagNodeOutput(object):
+    """
+    An output property of a DagNode.  Contains its data packet type, a doc
+    string, a name, and potentially a string containing a custom file dialog
+    that pops open when a button is pressed.  Each sub-output in a given output
+    must contain the exact number of files as the rest of the sub-outputs, thus
+    a single sequence range is present for an entire output.
+    """
+    
+    def __init__(self, name, dataPacketType, docString=None, customFileDialogName=None):
+        """
+        """
+        self.name = name
+        self.value = dict()
+        self.seqRange = None
+        self.docString = docString
+        self.customFileDialogName = customFileDialogName
+
+        # Constants, not written to disk
+        self.dataPacketType = dataPacketType
+
+        # Note: We add the largest possible set of attributes this node can have from 
+        #       its datapacket and all the datapacket's children types
+        allPossibleFileDescriptorNames = set()
+        for tipe in self.allPossibleOutputTypes():
+            for fdName in data_packet.filenameDictForDataPacketType(tipe):
+                allPossibleFileDescriptorNames.add(fdName)
+        for fdName in allPossibleFileDescriptorNames:
+            self.value[fdName] = ""
+            self.seqRange = None
+
+
+    def allPossibleOutputTypes(self):
+        """
+        Returns a list of all type data packet types this node can output.
+        """
+        outputTypeList = set([self.dataPacketType])
+        outputTypeList |= set(util.allClassChildren(self.dataPacketType))
+        return outputTypeList
+
+
+    def subOutputNames(self):
+        """
+        Return a list of the names of each of this output's data packet sub-types.
+        """
+        subList = list()
+        for subName in self.value:
+            subList.append(subName)
+        return subList
+
+
+    def getSeqRange(self):
+        """
+        Gets the single sequence range for this output.
+        """
+        if not self.seqRange:
+            return None
+        if self.seqRange[0] is None or self.seqRange[1] is None:
+            return None
+        if self.seqRange[0] == "" or self.seqRange[1] == "":
+            return None
+        return self.seqRange
+        
+
+    # TODO: Should my dictionary keys be more interesting?
+    def __hash__(self):
+        return hash(self.name)
+    def __eq__(self, other):
+        return (self.name) == (other.name)
+
 
 ###############################################################################
 ## Built-in nodes
